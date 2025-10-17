@@ -1,0 +1,18 @@
+{
+  "name": "cutest-py (repo-level, opens /code)",
+  "image": "cutest-py:latest",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace/code",
+  "containerEnv": {
+    "PYCUTEST_CACHE": "/workspace/pycutest_cache"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/code/pycutest_cache,target=/workspace/pycutest_cache,type=bind,consistency=cached"
+  ],
+  "extensions": [
+    "ms-python.python"
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "/opt/conda/bin/python"
+  }
+}

@@ -1,6 +1,9 @@
 # Python
 __pycache__/
 *.pyc
+code/pycutest_cache/
+code/pycutest_cache_holder/
+.DS_Store
 
 # LaTeX
 *.aux
