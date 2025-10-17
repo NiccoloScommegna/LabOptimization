@@ -1,18 +1,28 @@
 {
   "name": "cutest-py (repo-level, opens /code)",
-  "image": "cutest-py:latest",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace/code",
   "containerEnv": {
-    "PYCUTEST_CACHE": "/workspace/pycutest_cache"
+    "PYCUTEST_CACHE": "/workspace/pycutest_cache",
+    "CUTEST": "/cutest/cutest",
+    "ARCHDEFS": "/cutest/archdefs",
+    "SIFDECODE": "/cutest/sifdecode",
+    "MASTSIF": "/cutest/mastsif",
+    "MYARCH": "pc64.lnx.gfo"
   },
   "mounts": [
     "source=${localWorkspaceFolder}/code/pycutest_cache,target=/workspace/pycutest_cache,type=bind,consistency=cached"
   ],
-  "extensions": [
-    "ms-python.python"
-  ],
-  "settings": {
-    "python.defaultInterpreterPath": "/opt/conda/bin/python"
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ],
+      "settings": { "python.defaultInterpreterPath": "/opt/conda/bin/python" }
+    }
   }
 }
