@@ -44,7 +44,7 @@ def gradient_descent_armijo(f: Callable[[np.ndarray], float],
                             g: Callable[[np.ndarray], np.ndarray],
                             x0: np.ndarray,
                             tol: float = 1e-6,
-                            maxiter: int = 1000000) -> Tuple[np.ndarray, List[float]]:
+                            maxiter: int = 100000) -> Tuple[np.ndarray, List[float]]:
     """
     Metodo di discesa del gradiente con ricerca del passo secondo la condizione di Armijo.
     Ritorna il punto minimo trovato e la lista dei valori della funzione obiettivo ad ogni iterazione.
@@ -184,3 +184,89 @@ def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
     # se non abbiamo trovato alpha soddisfacente entro max_iter
     info['status'] = 'maxiter'
     return 0.5 * (alpha_l + alpha_u), info
+
+
+def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
+                      g: Callable[[np.ndarray], np.ndarray],
+                      x0: np.ndarray,
+                      c1: float = 1e-4,
+                      c2: float = 0.9,
+                      tol: float = 1e-6,
+                      max_iter: int = 10000) -> Tuple[np.ndarray, Dict]:
+    """
+    Implementa il metodo BFGS seguendo il seguente pseudocodice:
+    
+    Dati: x0 ∈ Rn, B0 definita positiva, 0<c1<c2<1, tol.
+    Poni k=0.
+    While |∇f(xk)| > tol
+        dk = -(Bk^-1) ∇f(xk)
+        Determina alpha_k con la funzione strong_wolfe_line_search()
+        xk+1 = xk + alpha_k dk
+        yk = ∇f(xk+1) - ∇f(xk)
+        sk = xk+1 - xk
+        Bk+1 = Bk + (yk yk^T)/(sk^T yk) - (Bk sk sk^T Bk)/(sk^T Bk sk)
+        k = k + 1
+    End While
+    """
+    xk = np.asarray(x0, dtype=float)
+    n = xk.size
+    Bk = np.eye(n)  # B0 definita positiva (matrice identità)
+    gk = g(xk)
+    fk = f(xk)
+
+    k = 0
+    x_history = [xk.copy()]
+    f_history = [fk]
+    grad_norms = [np.linalg.norm(gk)]
+    
+    info = {
+        'status': None,
+        'nit': 0,
+        'x_history': x_history,
+        'f_history': f_history,
+        'grad_norms': grad_norms
+    }
+
+    while vecnorm(gk) > tol and k < max_iter:
+        # direzione di discesa
+        dk = -np.linalg.solve(Bk, gk)
+
+        # ricerca del passo
+        alpha, ls_info = strong_wolfe_line_search(f, g, xk, dk, c1=c1, c2=c2)
+
+        # aggiornamento
+        x_next = xk + alpha * dk
+        g_next = g(x_next)
+        yk = g_next - gk
+        sk = x_next - xk
+
+        # aggiornamento di Bk (formula standard)
+        sy = float(np.dot(sk, yk))
+        Bs = Bk @ sk
+        sBs = float(np.dot(sk, Bs))
+        if sy <= 1e-12 or sBs <= 1e-12:
+            # evita divisioni per zero o valori non curvati
+            info['status'] = 'curvature_condition_failed'
+            break
+
+        term1 = np.outer(yk, yk) / sy
+        term2 = np.outer(Bs, Bs) / sBs
+        Bk = Bk + term1 - term2
+
+        # aggiorna valori
+        xk = x_next
+        gk = g_next
+        fk = f(xk)
+
+        k += 1
+        info['nit'] = k
+        info['x_history'].append(xk.copy())
+        info['f_history'].append(fk)
+        info['grad_norms'].append(vecnorm(gk))
+
+    if vecnorm(gk) <= tol:
+        info['status'] = 'converged'
+    elif k >= max_iter:
+        info['status'] = 'max_iter_reached'
+
+    return xk, info
