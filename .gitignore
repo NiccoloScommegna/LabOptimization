@@ -4,6 +4,7 @@ __pycache__/
 code/pycutest_cache/
 code/pycutest_cache_holder/
 .DS_Store
+code/annotazioni.txt
 
 # LaTeX
 *.aux
