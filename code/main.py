@@ -94,3 +94,6 @@ if __name__ == "__main__":
     #         print(f"  checks: Armijo={check_scipy[0]}, strong_grad={check_scipy[1]}")
     # except Exception as e:
     #     print(f"scipy line_search error on AKIVA: {e}")
+
+    # Per ripetere i test
+    # rng = np.random.default_rng(seed=42)

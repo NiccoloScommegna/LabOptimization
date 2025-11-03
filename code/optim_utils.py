@@ -280,6 +280,20 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
 # METODI NOISE TOLERANT
 # -----------------------
 
+def _eval_f_noisy(f: Callable[[np.ndarray], float], x: np.ndarray, eps_f: float, rng: np.random.Generator) -> float:
+    """Valuta f(x) e aggiunge rumore uniforme in [-eps_f, eps_f]."""
+    return float(f(x)) + rng.uniform(-eps_f, eps_f) if eps_f and eps_f > 0 else float(f(x))
+
+
+def _eval_g_noisy(g: Callable[[np.ndarray], np.ndarray], x: np.ndarray, eps_g: float, rng: np.random.Generator) -> np.ndarray:
+    """Valuta g(x) e aggiunge rumore vettoriale uniforme su ogni componente in [-eps_g, eps_g]."""
+    gx = np.asarray(g(x), dtype=float)
+    if eps_g and eps_g > 0:
+        noise = rng.uniform(-eps_g, eps_g, size=gx.shape)
+        return gx + noise
+    return gx
+
+
 def check_strong_wolfe_noise_tolerant(f: callable[[np.ndarray], float], 
                                       g: callable[[np.ndarray], np.ndarray],
                                       xk: np.ndarray, 
@@ -287,7 +301,9 @@ def check_strong_wolfe_noise_tolerant(f: callable[[np.ndarray], float],
                                       alpha: float, 
                                       beta: float,
                                       c1: float = 1e-4, c2: float = 0.9, c3: float = 0.5,
-                                      epsilon_g: float = 1e-8) -> Tuple[bool, bool, bool]:
+                                      eps_f: float = 1e-5,
+                                      eps_g: float = 1e-5,
+                                      rng: Optional[np.random.Generator] = None) -> Tuple[bool, bool, bool]:
     """
     Controlla se le condizioni di strong Wolfe noise tolerant sono soddisfatte per il passo alpha e beta.
     Ritorna una tupla di booleani (Armijo_ok, strong_grad_ok, noise_ok).
@@ -298,10 +314,33 @@ def check_strong_wolfe_noise_tolerant(f: callable[[np.ndarray], float],
     3. Noise tolerant: (g(xk + beta * dk) - g(xk))^T * dk >= 2 * (1 + c3) * epsilon_g * ||dk||
     con c1 in (0, 1/2), c2 in (c1, 1) e c3 > 0.
     """
-    armijo_ok, strong_grad_ok = check_strong_wolfe(f, g, xk, dk, alpha, c1=c1, c2=c2)
+    if rng is None:
+        rng = np.random.default_rng()
 
-    # Controllo della condizione di noise tolerant
-    noise_ok = float(np.dot(g(xk + beta * dk) - g(xk), dk)) >= 2 * (1 + c3) * epsilon_g * np.linalg.norm(dk)
+    xk = np.asarray(xk, dtype=float)
+    dk = np.asarray(dk, dtype=float)
+
+    # valori rumorosi
+    phi0 = _eval_f_noisy(f, xk, eps_f, rng)
+    phi_alpha = _eval_f_noisy(f, xk + alpha * dk, eps_f, rng)
+
+    g0 = _eval_g_noisy(g, xk, eps_g, rng)
+    g_alpha = _eval_g_noisy(g, xk + alpha * dk, eps_g, rng)
+
+    dphi0 = float(np.dot(g0, dk))
+    dphi_alpha = float(np.dot(g_alpha, dk))
+
+    armijo_ok = phi_alpha <= phi0 + c1 * alpha * dphi0
+    strong_grad_ok = abs(dphi_alpha) <= c2 * abs(dphi0)
+
+    # noise control uses beta (se None -> false)
+    if beta is None:
+        noise_ok = False
+    else:
+        g_beta = _eval_g_noisy(g, xk + beta * dk, eps_g, rng)
+        lhs = float(np.dot(g_beta - g0, dk))
+        rhs = 2.0 * (1.0 + c3) * float(eps_g) * vecnorm(dk)
+        noise_ok = lhs >= rhs
 
     return bool(armijo_ok), bool(strong_grad_ok), bool(noise_ok)
 
@@ -310,9 +349,11 @@ def split_phase(f: Callable[[np.ndarray], float],
                 g: Callable[[np.ndarray], np.ndarray],
                 x: np.ndarray,
                 d: np.ndarray,
-                eps_g: float,
                 alpha_init: float,
                 beta_init: Optional[float] = None,
+                eps_f: float = 1e-5,
+                eps_g: float = 1e-5,
+                rng: Optional[np.random.Generator] = None,
                 c1: float = 1e-4,
                 c3: float = 0.5,
                 max_backtrack: int = 50,
@@ -326,9 +367,10 @@ def split_phase(f: Callable[[np.ndarray], float],
     Input:
       f, g      : callable per la funzione obiettivo e il gradiente (vettori)
       x, d      : punto corrente e direzione di ricerca (array numpy)
-      eps_g     : livello di rumore per i gradienti (scalare)
-      alpha     : lunghezza iniziale del passo (scalare)
-      beta      : parametro di allungamento iniziale (se None, beta = 1.0)
+      alpha_init: lunghezza iniziale del passo (scalare)
+      beta_init : parametro di allungamento iniziale (se None, beta = 1.0)
+      eps_f     : livello di rumore per le valutazioni della funzione (scalare)
+      eps_g     : livello di rumore per le valutazioni del gradiente (scalare)
       c1, c3    : costanti dell'algoritmo (c1 non utilizzato rigorosamente tranne che per Armijo RHS)
       max_backtrack : numero massimo di iterazioni per dividere alpha per 10
       max_doublings  : numero massimo di raddoppi per beta
@@ -338,6 +380,9 @@ def split_phase(f: Callable[[np.ndarray], float],
       alpha (float), beta (float), info (dict):
         info contiene 'status', 'n_f', 'n_g', 'alpha_history', 'beta_history'
     """
+    if rng is None:
+        rng = np.random.default_rng()
+    
     x = np.asarray(x, dtype=float)
     d = np.asarray(d, dtype=float)
 
@@ -348,8 +393,8 @@ def split_phase(f: Callable[[np.ndarray], float],
     beta_history = []
 
     # Precalcola valori iniziali
-    fx = float(f(x)); n_f += 1
-    gx = np.asarray(g(x), dtype=float); n_g += 1
+    fx = _eval_f_noisy(f, x, eps_f, rng); n_f += 1
+    gx = _eval_g_noisy(g, x, eps_g, rng); n_g += 1
     gp0 = float(np.dot(gx, d))
     d_norm = float(np.linalg.norm(d))
 
@@ -363,7 +408,7 @@ def split_phase(f: Callable[[np.ndarray], float],
     status = 'ok'
     while bt_iters < max_backtrack:
         alpha_history.append(alpha)
-        f_alpha = float(f(x + alpha * d)); n_f += 1
+        f_alpha = _eval_f_noisy(f, x + alpha * d, eps_f, rng); n_f += 1
         # Condizione di Armijo
         if f_alpha <= fx + c1 * alpha * gp0:
             break
@@ -390,7 +435,7 @@ def split_phase(f: Callable[[np.ndarray], float],
     rhs = None  # right-hand side dell'ultima valutazione
     while doublings < max_doublings:
         beta_history.append(beta)
-        g_beta = np.asarray(g(x + beta * d), dtype=float); n_g += 1
+        g_beta = _eval_g_noisy(g, x + beta * d, eps_g, rng); n_g += 1
         lhs = float(np.dot(g_beta - gx, d))
         rhs = 2.0 * (1.0 + c3) * float(eps_g) * d_norm
         if lhs >= rhs:
@@ -424,9 +469,11 @@ def strong_wolfe_noise_tolerant_line_search(f: Callable[[np.ndarray], float],
                                             g: Callable[[np.ndarray], np.ndarray],
                                             x: np.ndarray,
                                             d: np.ndarray,
-                                            eps_g: float,
                                             alpha_init: float = 1.0,
                                             beta_init: Optional[float] = None,
+                                            eps_f: float = 1e-5,
+                                            eps_g: float = 1e-5,
+                                            rng: Optional[np.random.Generator] = None,
                                             c1: float = 1e-4,
                                             c2: float = 0.9,
                                             c3: float = 0.5,
@@ -441,9 +488,11 @@ def strong_wolfe_noise_tolerant_line_search(f: Callable[[np.ndarray], float],
     Input:
       f, g        : callable per la funzione obiettivo e il gradiente (vettori)
       x, d        : punto corrente e direzione di ricerca (array numpy)
-      eps_g       : livello di rumore per i gradienti (scalare)
       alpha_init  : passo iniziale (default 1.0)
-      beta_init   : parametro di allungamento iniziale (se None, beta = 1.0)
+      beta_init   : parametro di allungamento iniziale (default None)
+      eps_f       : livello di rumore per le valutazioni della funzione (scalare)
+      eps_g       : livello di rumore per le valutazioni del gradiente (scalare)
+      rng         : generatore di numeri casuali (se None, ne viene creato uno nuovo)
       c1, c2, c3  : costanti (0 < c1 < c2 < 1, c3 > 0)
       Nsplit      : numero massimo di iterazioni prima della split-phase
       max_backtrack : massimo numero di backtrack nella split_phase
@@ -457,12 +506,15 @@ def strong_wolfe_noise_tolerant_line_search(f: Callable[[np.ndarray], float],
       info  (dict)  : informazioni diagnostiche che includono 'status', 'n_iter', 'l', 'u',
                       l'ultima phi calcolata e le derivate direzionali.
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     x = np.asarray(x, dtype=float)
     d = np.asarray(d, dtype=float)
 
     # Precalcola f(x) e g(x)
-    fx = float(f(x))
-    gx = np.asarray(g(x), dtype=float)
+    fx = _eval_f_noisy(f, x, eps_f, rng)
+    gx = _eval_g_noisy(g, x, eps_g, rng)
     gp0 = float(np.dot(gx, d))  # g(x)^T p
     d_norm = float(np.linalg.norm(d))
 
@@ -470,7 +522,7 @@ def strong_wolfe_noise_tolerant_line_search(f: Callable[[np.ndarray], float],
     l = 0.0
     u = np.inf
     alpha = float(alpha_init)
-    beta = 1.0 if beta_init is None else float(beta_init)
+    beta = None if beta_init is None else float(beta_init)
 
     info: Dict = {
         'status': None,
@@ -487,8 +539,8 @@ def strong_wolfe_noise_tolerant_line_search(f: Callable[[np.ndarray], float],
         info['n_iter'] = i + 1
         # Valuta phi(alpha) e il gradiente in x+alpha p
         x_alpha = x + alpha * d
-        phialpha = float(f(x_alpha))
-        g_alpha = np.asarray(g(x_alpha), dtype=float)
+        phialpha = _eval_f_noisy(f, x_alpha, eps_f, rng)
+        g_alpha = _eval_g_noisy(g, x_alpha, eps_g, rng)
         gdiff_dot_d = float(np.dot(g_alpha - gx, d))  # (g(x + alpha p)-g(x))^T p
         g_alpha_dot_d = float(np.dot(g_alpha, d))     # g(x + alpha p)^T p
 
@@ -509,9 +561,11 @@ def strong_wolfe_noise_tolerant_line_search(f: Callable[[np.ndarray], float],
             info['status'] = 'split_required'
             alpha_sp, beta_sp, split_info = split_phase(f=f, g=g,
                                                         x=x, d=d,
-                                                        eps_g=eps_g,
                                                         alpha_init=alpha,
                                                         beta_init=beta_init,
+                                                        eps_f=eps_f,
+                                                        eps_g=eps_g,
+                                                        rng=rng,
                                                         c1=c1, c3=c3,
                                                         max_backtrack=max_backtrack,
                                                         max_doublings=max_doublings,
@@ -541,9 +595,11 @@ def strong_wolfe_noise_tolerant_line_search(f: Callable[[np.ndarray], float],
     info['status'] = 'split_required_maxiters'
     alpha_sp, beta_sp, split_info = split_phase(f=f, g=g,
                                                 x=x, d=d,
-                                                eps_g=eps_g,
                                                 alpha_init=alpha,
                                                 beta_init=beta_init,
+                                                eps_f=eps_f,
+                                                eps_g=eps_g,
+                                                rng=rng,
                                                 c1=c1, c3=c3,
                                                 max_backtrack=max_backtrack,
                                                 max_doublings=max_doublings,
@@ -563,8 +619,9 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
                                      c3: float = 0.5,
                                      tol: float = 1e-6,
                                      max_iter: int = 10000,
-                                     eps_f: float = 1e-8,
-                                     eps_g: float = 1e-8,
+                                     eps_f: float = 1e-5,
+                                     eps_g: float = 1e-5,
+                                     rng: Optional[np.random.Generator] = None,
                                      alpha_init: float = 1.0,
                                      beta_init: Optional[float] = 1.0,
                                      Nsplit: int = 30,
@@ -581,17 +638,22 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
         dk = -(Bk^-1) ∇f(xk)
         Determina alpha_k con la funzione strong_wolfe_noise_tolerant_line_search()
         xk+1 = xk + alpha_k dk
-        yk = ∇f(xk + beta_k dk) - ∇f(xk) [equivalente a yk = (xk + beta_k dk) - g(xk)]
+        yk = ∇f(xk + beta_k dk) - ∇f(xk) [equivalente a yk = g(xk + beta_k dk) - g(xk)]
         sk = beta_k dk  # con beta_k parametro di allungamento
         Bk+1 = Bk + (yk yk^T)/(sk^T yk) - (Bk sk sk^T Bk)/(sk^T Bk sk)
         k = k + 1
     End While
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
+    # Inizializzazioni
     xk = np.asarray(x0, dtype=float)
     n = xk.size
     Bk = np.eye(n)  # B0 definita positiva (matrice identità)
-    gk = g(xk)
-    fk = f(xk)
+    fk = _eval_f_noisy(f, xk, eps_f, rng)
+    gk = _eval_g_noisy(g, xk, eps_g, rng)
+
 
     k = 0
     x_history = [xk.copy()]
@@ -613,9 +675,11 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
 
         # ricerca del passo
         alpha, beta, ls_info = strong_wolfe_noise_tolerant_line_search(f=f, g=g, x=xk, d=dk, 
-                                                                       eps_g=eps_g, 
                                                                        alpha_init=alpha_init, 
-                                                                       beta_init=beta_init, 
+                                                                       beta_init=beta_init,
+                                                                       eps_f=eps_f,
+                                                                       eps_g=eps_g,
+                                                                       rng=rng,
                                                                        c1=c1, c2=c2, c3=c3,
                                                                        Nsplit=Nsplit, 
                                                                        max_backtrack=max_backtrack, 
@@ -626,7 +690,19 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
 
         # se non trovato, usa Armijo come fallback
         if alpha is None:
-            alpha, armijo_line_search_info = armijo_line_search(f=f, g=g, x=xk, d=dk)
+            alpha_local = alpha_init
+            fx = _eval_f_noisy(f, xk, eps_f, rng)
+            gp = float(np.dot(gk, dk))
+            armijo_found = False
+            for _ in range(1000):
+                f_trial = _eval_f_noisy(f, xk + alpha_local * dk, eps_f, rng)
+                if f_trial <= fx + c1 * alpha_local * gp + eps_f:
+                    armijo_found = True
+                    break
+                alpha_local *= 0.5
+                if alpha_local < 1e-16:
+                    break
+            alpha = float(alpha_local) if armijo_found else None
 
         # se alpha è ancora None -> piccolo fallback e salto dell'aggiornamento
         if alpha is None:
@@ -634,13 +710,14 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
             # prendo uno step molto piccolo per aggiornare xk e gk
             tiny = 1e-12
             x_next = xk + tiny * dk
-            g_next = np.asarray(g(x_next), dtype=float)
+            fk_next = _eval_f_noisy(f, x_next, eps_f, rng)
+            g_next = _eval_g_noisy(g, x_next, eps_g, rng)
             # non aggiorno Bk
             info['status_detail'] = 'tiny_step_and_skip_update'
             # aggiornamento iterazione per i criteri di terminazione
             xk = x_next
             gk = g_next
-            fk = float(f(xk))
+            fk = fk_next
             info['nit'] = k + 1
             info['x_history'].append(xk.copy()); info['f_history'].append(fk); info['grad_norms'].append(vecnorm(gk))
             break
@@ -648,11 +725,25 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
 
         # aggiornamento
         x_next = xk + alpha * dk
-        g_next = np.asarray(g(x_next), dtype=float)
-        fk_next = float(f(x_next))
+        fk_next = _eval_f_noisy(f, x_next, eps_f, rng)
+        g_next = _eval_g_noisy(g, x_next, eps_g, rng)
+        
+        # Se beta non è stato trovato, usiamo l'aggiornamento classico di BFGS come fallback
+        if beta is None:
+            print("Warning: beta not found in line search; using classic BFGS update.")
+            yk = g_next - gk
+            sk = x_next - xk
+        else:
+            # XXX: da pseudocodice sembra non usare il nuovo punto calcolato x_next per aggiornare yk e sk
 
-        yk = g(x_next + beta * dk) - gk  # yk calcolato con il parametro di allungamento beta
-        sk = beta * dk  # sk calcolato con il parametro di allungamento beta
+            # g_beta = _eval_g_noisy(g, xk + beta * dk, eps_g, rng)
+            # yk = g_beta - gk
+            # sk = beta * dk
+
+            # Personalmente, trovo più coerente usare x_next come fa BFGS classico, per aggiornare yk e sk
+            g_beta = _eval_g_noisy(g, x_next + beta * dk, eps_g, rng)
+            yk = g_beta - gk  # yk calcolato con il parametro di allungamento beta
+            sk = beta * dk  # sk calcolato con il parametro di allungamento beta
 
         # aggiornamento di Bk (formula standard)
         sy = float(np.dot(sk, yk))
