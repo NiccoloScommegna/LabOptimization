@@ -44,10 +44,12 @@ if __name__ == "__main__":
     f = lambda x: p.obj(x)
     g = lambda x: p.grad(x)
     xmin, f_values = optim_utils.gradient_descent_armijo(f, g, x0)
+    print("Gradient descent with Armijo:")
     print("Minimum found at x =", xmin)
     print("Function value at minimum f(x) =", f(xmin))
     print("Number of function evaluations =", len(f_values))
-    # print("Done")
+
+    print("\n---\n")
 
     # Esecuzione del metodo BFGS con Wolfe forti
     xmin_bfgs, info = optim_utils.bfgs_strong_wolfe(f, g, x0)
@@ -55,6 +57,41 @@ if __name__ == "__main__":
     print("Minimum found at x =", xmin_bfgs)
     print("Function value at minimum f(x) =", info['f_history'][-1])
     print("Number of function evaluations =", info['nit'])
+
+    print("\n---\n")
+
+    # Per ripetere i test
+    rng = np.random.default_rng(seed=42)
+    eps_f = 1e-3
+    eps_g = 1e-3
+
+    # Esecuzione del metodo BFGS con Wolfe forti e tollerante al rumore
+    xmin_bfgs_noisy, info_noisy = optim_utils.bfgs_strong_wolfe_noise_tolerant(f, g, x0, tol=1e-10, eps_f=eps_f, eps_g=eps_g, rng=rng)
+    print("BFGS with strong Wolfe conditions (noisy):")
+    print("Minimum found at x =", xmin_bfgs_noisy)
+    print("Function value at minimum f(x) =", info_noisy['f_history'][-1])
+    print("Number of function evaluations =", info_noisy['nit'])
+
+    print("\n---\n")
+
+    # XXX: La line search con Armijo su funzione rumorosa non riesce a convergere e raggiunge il numero massimo di iterazioni
+    # # Esecuzione del metodo di discesa del gradiente con Armijo ma con funzione rumorosa
+    # xmin_noisy, f_values_noisy = optim_utils.gradient_descent_armijo(f, g, x0, eps_f=1e-5, eps_g=1e-5, rng=rng)
+    # print("Gradient descent with Armijo (noisy function):")
+    # print("Minimum found at x =", xmin_noisy)
+    # print("Function value at minimum f(x) =", f(xmin_noisy))
+    # print("Number of function evaluations =", len(f_values_noisy))
+
+    # print("\n---\n")
+
+    # Esecuzione del metodo BFGS con Wolfe forti ma con funzione rumorosa
+    xmin_bfgs_noisy2, info_noisy2 = optim_utils.bfgs_strong_wolfe(f, g, x0, eps_f=eps_f, eps_g=eps_g, rng=rng)
+    print("BFGS with strong Wolfe conditions (noisy function):")
+    print("Minimum found at x =", xmin_bfgs_noisy2)
+    print("Function value at minimum f(x) =", info_noisy2['f_history'][-1])
+    print("Number of function evaluations =", info_noisy2['nit'])
+
+    print("\n---\n")
 
     # # Cerca il passo con le condizioni di Wolfe forti su i problemi trovati e controllo se soddisfa le condizioni
     # for name in problems:
@@ -95,5 +132,3 @@ if __name__ == "__main__":
     # except Exception as e:
     #     print(f"scipy line_search error on AKIVA: {e}")
 
-    # Per ripetere i test
-    # rng = np.random.default_rng(seed=42)

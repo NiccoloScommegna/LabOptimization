@@ -2,9 +2,49 @@ import numpy as np
 from typing import Callable, Tuple, List, Dict, Optional
 
 
+# -----------------------
+# METODI HELPER PER VALUTAZIONI E NORMA
+# -----------------------
+
+
+def _eval_f_noisy(f: Callable[[np.ndarray], float], x: np.ndarray, eps_f: float, rng: np.random.Generator) -> float:
+    """
+    Valuta f(x) e aggiunge rumore uniforme in [-eps_f, eps_f].
+    Valuta f(x) e aggiunge rumore gaussiano N(0, eps_f^2).
+    Se eps_f <= 0 o eps_f è None, ritorna f(x) senza rumore.
+    """
+    val = float(f(x))
+    if eps_f and eps_f > 0:
+        # noise = rng.uniform(-eps_f, eps_f)  # Rumore uniforme
+        noise = rng.normal(loc=0.0, scale=eps_f)  # Rumore gaussiano
+        return val + noise
+    return val
+
+
+def _eval_g_noisy(g: Callable[[np.ndarray], np.ndarray], x: np.ndarray, eps_g: float, rng: np.random.Generator) -> np.ndarray:
+    """
+    Valuta g(x) e aggiunge rumore vettoriale uniforme su ogni componente in [-eps_g, eps_g].
+    Valuta g(x) e aggiunge rumore gaussiano N(0, eps_g^2 I).
+    Se eps_g <= 0 o eps_g è None, ritorna g(x) senza rumore.
+    """
+    gx = np.asarray(g(x), dtype=float)
+    if eps_g and eps_g > 0:
+        # noise = rng.uniform(-eps_g, eps_g, size=gx.shape)  # Rumore uniforme per ogni componente
+        noise = rng.normal(loc=0.0, scale=eps_g, size=gx.shape)  # Rumore gaussiano per ogni componente
+        return gx + noise
+    return gx
+
+
 # Funzione di norma vettoriale
 def vecnorm(x: np.ndarray) -> float:
     return np.linalg.norm(x)
+
+
+
+# -----------------------
+# METODI BASE DI OTTIMIZZAZIONE
+# -----------------------
+
 
 
 # Metodo di Armijo per la ricerca del passo
@@ -15,23 +55,28 @@ def armijo_line_search(f: Callable[[np.ndarray], float],
                        alpha0: float = 1.0,
                        sigma: float = 0.5,
                        c1: float = 1e-4,
-                       maxiter: int = 1000) -> float:
+                       maxiter: int = 1000,
+                       eps_f: Optional[float] = None,
+                       eps_g: Optional[float] = None,
+                       rng: Optional[np.random.Generator] = None) -> float:
     """
     Ricerca del passo secondo la condizione di Armijo:
     f(xk + alpha * dk) <= f(xk) + c1 * alpha * g(xk)^T * dk
     Ritorna il passo alpha trovato.
     dk deve essere una direzione di discesa (g(xk)^T * dk < 0).
     """
+    if rng is None:
+        rng = np.random.default_rng()
 
-    fk = f(xk)
-    gk = g(xk)
+    fk = _eval_f_noisy(f, xk, eps_f, rng)
+    gk = _eval_g_noisy(g, xk, eps_g, rng)
     alpha = alpha0
     # Verifica che dk sia una direzione di discesa
     if np.dot(gk, dk) >= 0:
         raise ValueError("dk non è una direzione di discesa")
     
     iter = 0
-    while f(xk + alpha * dk) > fk + c1 * alpha * np.dot(gk, dk) and iter < maxiter:
+    while _eval_f_noisy(f, xk + alpha * dk, eps_f, rng) > fk + c1 * alpha * np.dot(gk, dk) and iter < maxiter:
         alpha *= sigma
         iter += 1
     if iter == maxiter:
@@ -44,26 +89,48 @@ def gradient_descent_armijo(f: Callable[[np.ndarray], float],
                             g: Callable[[np.ndarray], np.ndarray],
                             x0: np.ndarray,
                             tol: float = 1e-6,
-                            maxiter: int = 100000) -> Tuple[np.ndarray, List[float]]:
+                            maxiter: int = 100000,
+                            alpha0: float = 1.0,
+                            sigma: float = 0.5,
+                            c1: float = 1e-4,
+                            max_line_search_iter: int = 1000,
+                            eps_f: Optional[float] = None,
+                            eps_g: Optional[float] = None,
+                            rng: Optional[np.random.Generator] = None) -> Tuple[np.ndarray, List[float]]:
     """
     Metodo di discesa del gradiente con ricerca del passo secondo la condizione di Armijo.
     Ritorna il punto minimo trovato e la lista dei valori della funzione obiettivo ad ogni iterazione.
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     xk = x0
-    f_values = [f(xk)]
+    f_values: List[float] = [float(_eval_f_noisy(f, xk, eps_f, rng))]
+
+    gk = _eval_g_noisy(g, xk, eps_g, rng)
     iter = 0
-    while (vecnorm(g(xk)) > tol) and (iter < maxiter):
-        dk = -g(xk)
-        alpha = armijo_line_search(f, g, xk, dk)
+    while (vecnorm(gk) > tol) and (iter < maxiter):
+        dk = -gk
+        alpha = armijo_line_search(f=f, g=g, xk=xk, dk=dk, alpha0=alpha0, sigma=sigma, c1=c1, maxiter=max_line_search_iter, eps_f=eps_f, eps_g=eps_g, rng=rng)
         xk = xk + alpha * dk
-        f_values.append(f(xk))
+        f_values.append(float(_eval_f_noisy(f, xk, eps_f, rng)))
+        gk = _eval_g_noisy(g, xk, eps_g, rng)
         iter += 1
     if iter == maxiter:
         print("Warning: discesa del gradiente ha raggiunto il numero massimo di iterazioni")
     return xk, f_values
 
 
-def check_strong_wolfe(f, g, xk, dk, alpha, c1=1e-4, c2=0.9) -> Tuple[bool, bool]:
+def check_strong_wolfe(f: Callable[[np.ndarray], float], 
+                       g: Callable[[np.ndarray], np.ndarray], 
+                       xk: np.ndarray, 
+                       dk: np.ndarray, 
+                       alpha: float, 
+                       c1: float = 1e-4, 
+                       c2: float = 0.9,
+                       eps_f: Optional[float] = None,
+                       eps_g: Optional[float] = None,
+                       rng: Optional[np.random.Generator] = None) -> Tuple[bool, bool]:
     """
     Controlla se le condizioni di strong Wolfe sono soddisfatte per il passo alpha.
     Ritorna una tupla di booleani (Armijo_ok, strong_grad_ok).
@@ -82,18 +149,26 @@ def check_strong_wolfe(f, g, xk, dk, alpha, c1=1e-4, c2=0.9) -> Tuple[bool, bool
     φ(0) = f(xk),
     φ'(0) = g(xk)^T * dk,
     φ'(alpha) = g(xk + alpha * dk)^T * dk
-
     """
-    phi0 = f(xk)
-    phi_alpha = f(xk + alpha * dk)
-    g0 = g(xk)
+    if rng is None:
+        rng = np.random.default_rng()
+
+    xk = np.asarray(xk, dtype=float)
+    dk = np.asarray(dk, dtype=float)
+
+    phi0 = _eval_f_noisy(f, xk, eps_f, rng)
+    phi_alpha = _eval_f_noisy(f, xk + alpha * dk, eps_f, rng)
+
+    g0 = _eval_g_noisy(g, xk, eps_g, rng)
+    g_alpha = _eval_g_noisy(g, xk + alpha * dk, eps_g, rng)
+
     dphi0 = float(np.dot(g0, dk))
-    dphi_alpha = float(np.dot(g(xk + alpha * dk), dk))
-    
+    dphi_alpha = float(np.dot(g_alpha, dk))
+
     armijo_ok = phi_alpha <= phi0 + c1 * alpha * dphi0
     strong_grad_ok = abs(dphi_alpha) <= c2 * abs(dphi0)
-    
-    return armijo_ok, strong_grad_ok
+
+    return bool(armijo_ok), bool(strong_grad_ok)
 
 
 def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
@@ -104,7 +179,10 @@ def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
                              c2: float = 0.9,
                              alpha_l: float = 0.0,
                              alpha_u: float = 1.0,
-                             max_iter: int = 500) -> Tuple[Optional[float], Dict]:
+                             max_iter: int = 500,
+                             eps_f: Optional[float] = None,
+                             eps_g: Optional[float] = None,
+                             rng: Optional[np.random.Generator] = None) -> Tuple[Optional[float], Dict]:
     """
     Ricerca del passo che usa il punto centrale dell'intervallo
     [alpha_l, alpha_u] ad ogni iterazione e aggiorna i bound secondo le regole:
@@ -118,6 +196,9 @@ def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
       - 'alpha_history' : lista dei candidate alpha provati
       - 'armijo' / 'strong_grad' : ultimo controllo booleano (se applicabile)
     """
+    if rng is None:
+        rng = np.random.default_rng()
+
     xk = np.asarray(xk, dtype=float)
     dk = np.asarray(dk, dtype=float)
 
@@ -130,7 +211,7 @@ def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
     }
 
     # assicurati direzione di discesa; se non lo è, forziamo -g
-    g0 = g(xk)
+    g0 = _eval_g_noisy(g, xk, eps_g, rng)
     dphi0 = float(np.dot(g0, dk))
     if dphi0 >= 0:
         # non è una direzione di discesa: forziamo dk = -g
@@ -146,7 +227,7 @@ def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
         info['alpha_history'].append(alpha)
 
         # Controllo forte-Wolfe con la funzione di verifica
-        armijo_ok, strong_grad_ok = check_strong_wolfe(f, g, xk, dk, alpha, c1=c1, c2=c2)
+        armijo_ok, strong_grad_ok = check_strong_wolfe(f=f, g=g, xk=xk, dk=dk, alpha=alpha, c1=c1, c2=c2, eps_f=eps_f, eps_g=eps_g, rng=rng)
         info['armijo'] = bool(armijo_ok)
         info['strong_grad'] = bool(strong_grad_ok)
         info['nit'] = j + 1
@@ -156,9 +237,9 @@ def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
             return alpha, info
 
         # calcola phi e derivata esplicitamente (per le regole di aggiornamento)
-        phi0 = f(xk)
-        phi_alpha = f(xk + alpha * dk)
-        dphi_alpha = float(np.dot(g(xk + alpha * dk), dk))
+        phi0 = _eval_f_noisy(f, xk, eps_f, rng)
+        phi_alpha = _eval_f_noisy(f, xk + alpha * dk, eps_f, rng)
+        dphi_alpha = float(np.dot(_eval_g_noisy(g, xk + alpha * dk, eps_g, rng), dk))
 
         # 1) Se φ(α) > φ(0) + c1 α φ'(0) -> αu = α
         if phi_alpha > phi0 + c1 * alpha * dphi0:
@@ -167,7 +248,6 @@ def strong_wolfe_line_search(f: Callable[[np.ndarray], float],
             continue
 
         # 2) φ(α) ≤ φ(0) + c1 α φ'(0)  e  φ'(α) < c2 φ'(0) -> αl = α
-        #    (attenzione: dphi0 può essere negativo; seguiamo il tuo pseudocodice)
         if (phi_alpha <= phi0 + c1 * alpha * dphi0) and (dphi_alpha < c2 * dphi0):
             alpha_l = alpha
             continue
@@ -192,7 +272,13 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
                       c1: float = 1e-4,
                       c2: float = 0.9,
                       tol: float = 1e-6,
-                      max_iter: int = 10000) -> Tuple[np.ndarray, Dict]:
+                      max_iter: int = 10000,
+                      alpha_l: float = 0.0,
+                      alpha_u: float = 1.0,
+                      max_line_search_iter: int = 500,
+                      eps_f: Optional[float] = None,
+                      eps_g: Optional[float] = None,
+                      rng: Optional[np.random.Generator] = None) -> Tuple[np.ndarray, Dict]:
     """
     Implementa il metodo BFGS seguendo il seguente pseudocodice:
     
@@ -208,16 +294,19 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
         k = k + 1
     End While
     """
+    if rng is None:
+        rng = np.random.default_rng()
+    
     xk = np.asarray(x0, dtype=float)
     n = xk.size
     Bk = np.eye(n)  # B0 definita positiva (matrice identità)
-    gk = g(xk)
-    fk = f(xk)
+    gk = _eval_g_noisy(g, xk, eps_g, rng)
+    fk = _eval_f_noisy(f, xk, eps_f, rng)
 
     k = 0
     x_history = [xk.copy()]
     f_history = [fk]
-    grad_norms = [np.linalg.norm(gk)]
+    grad_norms = [vecnorm(gk)]
     
     info = {
         'status': None,
@@ -232,14 +321,16 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
         dk = -np.linalg.solve(Bk, gk)
 
         # ricerca del passo
-        alpha, ls_info = strong_wolfe_line_search(f, g, xk, dk, c1=c1, c2=c2)
+        alpha, ls_info = strong_wolfe_line_search(f=f, g=g, xk=xk, dk=dk, c1=c1, c2=c2, alpha_l=alpha_l, alpha_u=alpha_u, max_iter=max_line_search_iter, eps_f=eps_f, eps_g=eps_g, rng=rng)
         # se non trovato, usa Armijo come fallback
         if alpha is None:
-            alpha, armijo_line_search_info = armijo_line_search(f, g, xk, dk)
+            alpha, armijo_line_search_info = armijo_line_search(f=f, g=g, xk=xk, dk=dk, eps_f=eps_f, eps_g=eps_g, rng=rng)
 
         # aggiornamento
         x_next = xk + alpha * dk
-        g_next = g(x_next)
+        g_next = _eval_g_noisy(g, x_next, eps_g, rng)
+        fk_next = _eval_f_noisy(f, x_next, eps_f, rng)
+
         yk = g_next - gk
         sk = x_next - xk
 
@@ -259,7 +350,7 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
         # aggiorna valori
         xk = x_next
         gk = g_next
-        fk = f(xk)
+        fk = fk_next
 
         k += 1
         info['nit'] = k
@@ -280,22 +371,10 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
 # METODI NOISE TOLERANT
 # -----------------------
 
-def _eval_f_noisy(f: Callable[[np.ndarray], float], x: np.ndarray, eps_f: float, rng: np.random.Generator) -> float:
-    """Valuta f(x) e aggiunge rumore uniforme in [-eps_f, eps_f]."""
-    return float(f(x)) + rng.uniform(-eps_f, eps_f) if eps_f and eps_f > 0 else float(f(x))
 
 
-def _eval_g_noisy(g: Callable[[np.ndarray], np.ndarray], x: np.ndarray, eps_g: float, rng: np.random.Generator) -> np.ndarray:
-    """Valuta g(x) e aggiunge rumore vettoriale uniforme su ogni componente in [-eps_g, eps_g]."""
-    gx = np.asarray(g(x), dtype=float)
-    if eps_g and eps_g > 0:
-        noise = rng.uniform(-eps_g, eps_g, size=gx.shape)
-        return gx + noise
-    return gx
-
-
-def check_strong_wolfe_noise_tolerant(f: callable[[np.ndarray], float], 
-                                      g: callable[[np.ndarray], np.ndarray],
+def check_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float], 
+                                      g: Callable[[np.ndarray], np.ndarray],
                                       xk: np.ndarray, 
                                       dk: np.ndarray, 
                                       alpha: float, 
@@ -736,14 +815,14 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
         else:
             # XXX: da pseudocodice sembra non usare il nuovo punto calcolato x_next per aggiornare yk e sk
 
-            # g_beta = _eval_g_noisy(g, xk + beta * dk, eps_g, rng)
-            # yk = g_beta - gk
-            # sk = beta * dk
+            g_beta = _eval_g_noisy(g, xk + beta * dk, eps_g, rng)
+            yk = g_beta - gk
+            sk = beta * dk
 
             # Personalmente, trovo più coerente usare x_next come fa BFGS classico, per aggiornare yk e sk
-            g_beta = _eval_g_noisy(g, x_next + beta * dk, eps_g, rng)
-            yk = g_beta - gk  # yk calcolato con il parametro di allungamento beta
-            sk = beta * dk  # sk calcolato con il parametro di allungamento beta
+            # g_beta = _eval_g_noisy(g, x_next + beta * dk, eps_g, rng)
+            # yk = g_beta - gk  # yk calcolato con il parametro di allungamento beta
+            # sk = beta * dk  # sk calcolato con il parametro di allungamento beta
 
         # aggiornamento di Bk (formula standard)
         sy = float(np.dot(sk, yk))
