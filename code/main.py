@@ -27,6 +27,17 @@ def find_suitable_problems(num_problems: int = 6) -> List[str]:
     return problems[:num_problems]
 
 
+def choose_tol_from_noise(eps_g, n, factor=10, tol_min=1e-12):
+    """
+    Ritorna un tol coerente con il rumore sul gradiente.
+    factor: moltiplicatore empirico (5..20 => più conservativo)
+    """
+    if eps_g is None or eps_g <= 0:
+        return tol_min
+    noise_est = np.sqrt(n) * eps_g
+    return max(tol_min, factor * noise_est)
+
+
 if __name__ == "__main__":
     
     # Trova problemi adatti in PyCUTEst 
@@ -35,16 +46,29 @@ if __name__ == "__main__":
     for prob in problems:
         print(pycutest.problem_properties(prob))
 
-    
-    p = pycutest.import_problem('ROSENBR')
-    # print("Rosenbrock function in %gD" % p.n)
+    print("\n---\n")
+
+    # p = pycutest.import_problem('ROSENBR')
+    # p = pycutest.import_problem('AKIVA')  # problema con cui non si riesce a far convergere la line search con Armijo
+    # p = pycutest.import_problem('ALLINITU')
+    p = pycutest.import_problem('ARWHEAD') # TODO: capire come impostare il numero di variabili
+
+    # Parametri per il rumore e la tolleranza da usare nei test
+    n = p.n
+    rng = np.random.default_rng(seed=42)  # generatore di numeri casuali per il rumore con seed fisso per riproducibilità
+    eps_f = 1e-5
+    eps_g = 1e-5
+    tol = choose_tol_from_noise(eps_g, n, factor=10, tol_min=1e-12)
+    print(f"Using noise levels eps_f={eps_f}, eps_g={eps_g}, tol={tol}, n={n}")
+
+    print("\n---\n")
 
     # # Esecuzione del metodo di discesa del gradiente con Armijo
     x0 = p.x0
     f = lambda x: p.obj(x)
     g = lambda x: p.grad(x)
-    xmin, f_values = optim_utils.gradient_descent_armijo(f, g, x0)
-    print("Gradient descent with Armijo:")
+    xmin, f_values = optim_utils.gradient_descent_armijo(f, g, x0, tol=tol)
+    print("Gradient descent with Armijo (base function and base method):")
     print("Minimum found at x =", xmin)
     print("Function value at minimum f(x) =", f(xmin))
     print("Number of function evaluations =", len(f_values))
@@ -52,22 +76,17 @@ if __name__ == "__main__":
     print("\n---\n")
 
     # Esecuzione del metodo BFGS con Wolfe forti
-    xmin_bfgs, info = optim_utils.bfgs_strong_wolfe(f, g, x0)
-    print("BFGS with strong Wolfe conditions:")
+    xmin_bfgs, info = optim_utils.bfgs_strong_wolfe(f, g, x0, tol=tol)
+    print("BFGS with strong Wolfe conditions (base function and base method):")
     print("Minimum found at x =", xmin_bfgs)
     print("Function value at minimum f(x) =", info['f_history'][-1])
     print("Number of function evaluations =", info['nit'])
 
     print("\n---\n")
 
-    # Per ripetere i test
-    rng = np.random.default_rng(seed=42)
-    eps_f = 1e-3
-    eps_g = 1e-3
-
     # Esecuzione del metodo BFGS con Wolfe forti e tollerante al rumore
-    xmin_bfgs_noisy, info_noisy = optim_utils.bfgs_strong_wolfe_noise_tolerant(f, g, x0, tol=1e-10, eps_f=eps_f, eps_g=eps_g, rng=rng)
-    print("BFGS with strong Wolfe conditions (noisy):")
+    xmin_bfgs_noisy, info_noisy = optim_utils.bfgs_strong_wolfe_noise_tolerant(f, g, x0, tol=tol, eps_f=eps_f, eps_g=eps_g, rng=rng)
+    print("BFGS with strong Wolfe conditions (noisy function and noise-tolerant method):")
     print("Minimum found at x =", xmin_bfgs_noisy)
     print("Function value at minimum f(x) =", info_noisy['f_history'][-1])
     print("Number of function evaluations =", info_noisy['nit'])
@@ -85,8 +104,8 @@ if __name__ == "__main__":
     # print("\n---\n")
 
     # Esecuzione del metodo BFGS con Wolfe forti ma con funzione rumorosa
-    xmin_bfgs_noisy2, info_noisy2 = optim_utils.bfgs_strong_wolfe(f, g, x0, eps_f=eps_f, eps_g=eps_g, rng=rng)
-    print("BFGS with strong Wolfe conditions (noisy function):")
+    xmin_bfgs_noisy2, info_noisy2 = optim_utils.bfgs_strong_wolfe(f, g, x0, tol=tol, eps_f=eps_f, eps_g=eps_g, rng=rng)
+    print("BFGS with strong Wolfe conditions (noisy function and base method):")
     print("Minimum found at x =", xmin_bfgs_noisy2)
     print("Function value at minimum f(x) =", info_noisy2['f_history'][-1])
     print("Number of function evaluations =", info_noisy2['nit'])
