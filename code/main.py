@@ -6,7 +6,7 @@ from scipy.optimize import line_search
 import optim_utils
 
 
-def find_suitable_problems(num_problems: int = 6) -> List[str]:
+def find_suitable_problems(num_problems: int) -> List[str]:
     """
     Trova i problemi in PyCUTEst che hanno:
     - objective: 'other'
@@ -41,7 +41,7 @@ def choose_tol_from_noise(eps_g, n, factor=10, tol_min=1e-12):
 if __name__ == "__main__":
     
     # Trova problemi adatti in PyCUTEst 
-    problems = find_suitable_problems()
+    problems = find_suitable_problems(num_problems=8)
     print("Found problems:", problems)
     for prob in problems:
         print(pycutest.problem_properties(prob))
@@ -49,15 +49,32 @@ if __name__ == "__main__":
     print("\n---\n")
 
     # p = pycutest.import_problem('ROSENBR')
+    
     # p = pycutest.import_problem('AKIVA')  # problema con cui non si riesce a far convergere la line search con Armijo
+    
     # p = pycutest.import_problem('ALLINITU')
-    p = pycutest.import_problem('ARWHEAD') # TODO: capire come impostare il numero di variabili
+    
+    # pycutest.clear_cache('ARWHEAD')
+    # pycutest.print_available_sif_params('ARWHEAD')
+    # p = pycutest.import_problem('ARWHEAD', sifParams={'N': 100})  # Possibili valori per N: 100, 500, 1000, 5000
+
+    # pycutest.print_available_sif_params('BOX')
+    # p = pycutest.import_problem('BOX', sifParams={'N': 10})  # Possibili valori per N: 10, 100, 1000, 10000
+
+    # pycutest.print_available_sif_params('BOXPOWER')
+    # p = pycutest.import_problem('BOXPOWER', sifParams={'N': 10})  # Possibili valori per N: 10, 100, 1000, 10000, 20000
+
+    # p = pycutest.import_problem('BRKMCC')
+
+    # pycutest.print_available_sif_params('BROYDN7D')
+    p = pycutest.import_problem('BROYDN7D', sifParams={'N/2': 25})  # Possibili valori per N/2: 5, 25, 50, 250, 500
+
 
     # Parametri per il rumore e la tolleranza da usare nei test
     n = p.n
     rng = np.random.default_rng(seed=42)  # generatore di numeri casuali per il rumore con seed fisso per riproducibilità
-    eps_f = 1e-5
-    eps_g = 1e-5
+    eps_f = 1e-7
+    eps_g = 1e-7
     tol = choose_tol_from_noise(eps_g, n, factor=10, tol_min=1e-12)
     print(f"Using noise levels eps_f={eps_f}, eps_g={eps_g}, tol={tol}, n={n}")
 
