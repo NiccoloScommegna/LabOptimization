@@ -132,7 +132,16 @@ if __name__ == "__main__":
 
     # print("\n---\n")
 
-    methods = ['gd_armijo', 'bfgs', 'bfgs_noisy']
-    test.run_and_print(problem_name='ALLINITU', methods=methods, eps_f=1e-7, eps_g=1e-7, tol_factor=10, max_iter=10000)
+    methods = ['gd_armijo_with_base_function', 
+               # 'gd_armijo_with_noisy_function', 
+               'bfgs_with_base_function', 
+               'bfgs_with_noisy_function', 
+               'bfgs_noisy_with_noisy_function']
+    
+    test.run_and_print(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000)
+    
+    # test.run_and_print(problem_name='BRKMCC', methods=methods, eps_f=1e-7, eps_g=1e-7, tol_factor=10, max_iter=10000)
+
+    # test.run_and_print(problem_name='BROYDN7D', methods=methods, eps_f=1e-5, eps_g=1e-5, tol_factor=10, max_iter=10000, sif_params={'N/2': 25})
 
     
