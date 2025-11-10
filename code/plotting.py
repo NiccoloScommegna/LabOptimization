@@ -42,7 +42,7 @@ def plot_function_histories(histories: Sequence[Sequence[float]],
 
     plt.figure()  # singolo plot
     if problem_name is not None:
-        plt.title(f"Andamento valori funzione per il problema {problem_name}")
+        plt.title(f"Andamento valori funzione - problema {problem_name}")
     else:
         plt.title("Andamento valori funzione")
 

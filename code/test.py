@@ -4,6 +4,8 @@ import json
 import logging
 import os
 import time
+import contextlib
+import io
 from typing import Dict, List, Optional, Tuple
 import numpy as np
 
@@ -351,3 +353,111 @@ def run_and_print(problem_name: str, methods: List[str], eps_f: float = 1e-7, ep
         print("Attenzione: nessuna storia dei valori della funzione disponibile per i metodi eseguiti. Niente da plottare.")
     else:
         plotting.plot_function_histories(histories, method_labels, problem_name=prob_id)
+
+
+def repeat_timing(problem_name: str,
+                  methods: List[str],
+                  n_runs: int = 5,
+                  eps_f: float = 1e-7,
+                  eps_g: float = 1e-7,
+                  seed: int = 42,
+                  tol_factor: float = 10.0,
+                  max_iter: int = 10000,
+                  sif_params: Optional[Dict] = None,
+                  quiet: bool = False) -> Dict[str, Dict]:
+    """
+    Esegue `n_runs` volte ogni metodo su `problem_name`, raccoglie i tempi di esecuzione
+    e stampa la media (e deviazione standard) dei tempi per metodo.
+
+    Parametri:
+      - problem_name, methods, eps_f, eps_g, seed, tol_factor, max_iter, sif_params:
+        come in run_and_print(...)
+      - n_runs: numero di ripetizioni per metodo (intero >= 1)
+      - quiet: se True sopprime l'output prodotto da run_method_on_problem durante le ripetizioni
+
+    Ritorna:
+      dict mapping method -> {
+         'times': [t1, t2, ...],
+         'mean': mean_time,
+         'std': std_time,
+         'success_count': number_of_successful_runs
+      }
+    """
+    if n_runs < 1:
+        raise ValueError("n_runs deve essere >= 1")
+
+    rng_master = np.random.default_rng(seed)
+    results_summary: Dict[str, Dict] = {}
+
+    # Importa problema qui per evitare di ricaricarlo molte volte
+    try:
+        p = import_problem(problem_name, sif_params=sif_params)
+    except Exception as e:
+        print(f"Impossibile importare problema {problem_name}: {e}")
+        return {}
+
+    print(f"Ripetizione tempi: problema={problem_name}, runs per metodo={n_runs}")
+    print(f"Metodi: {methods}")
+    print("-----------------------------------------------------------")
+
+    for method in methods:
+        times = []
+        success_count = 0
+
+        for run_idx in range(n_runs):
+            # generiamo un sub-seed per ogni run per garantire indipendenza e riproducibilità
+            seed_run = rng_master.integers(1 << 30)
+            subrng = np.random.default_rng(seed_run)
+
+            # opzionalmente sopprimiamo l'output delle singole esecuzioni
+            if quiet:
+                fnull = io.StringIO()
+                ctx = contextlib.redirect_stdout(fnull)
+            else:
+                ctx = contextlib.nullcontext()
+
+            with ctx:
+                # misuriamo tempo esternamente come fallback; run_method_on_problem restituisce comunque 'elapsed'
+                t0 = time.perf_counter()
+                res = run_method_on_problem(p, method=method, eps_f=eps_f, eps_g=eps_g,
+                                            rng=subrng, tol_factor=tol_factor, max_iter=max_iter)
+                t1 = time.perf_counter()
+
+            # prendi preferibilmente il tempo riportato da run_method_on_problem, altrimenti usa la misura esterna
+            t_measured = None
+            if isinstance(res, dict) and 'elapsed' in res and res['elapsed'] is not None:
+                try:
+                    t_measured = float(res['elapsed'])
+                except Exception:
+                    t_measured = None
+            if t_measured is None:
+                t_measured = t1 - t0
+
+            times.append(t_measured)
+            if res.get('status') == 'success':
+                success_count += 1
+
+            # breve log per run (se non quiet)
+            if not quiet:
+                print(f"[{method}] run {run_idx+1}/{n_runs}: time={t_measured:.6f}s, status={res.get('status')}")
+
+        times_arr = np.asarray(times, dtype=float)
+        mean_t = float(np.mean(times_arr)) if times_arr.size > 0 else float('nan')
+        std_t = float(np.std(times_arr, ddof=0)) if times_arr.size > 0 else float('nan')
+
+        # stampa riepilogo per metodo
+        print("-----------------------------------------------------------")
+        print(f"Metodo: {method}")
+        print(f"  runs = {n_runs}, success = {success_count}")
+        print(f"  tempi (s): mean = {mean_t:.6f}, std = {std_t:.6f}")
+        print(f"  singoli tempi: {[f'{t:.6f}' for t in times]}")
+        print("-----------------------------------------------------------")
+
+        results_summary[method] = {
+            'times': [float(t) for t in times],
+            'mean': mean_t,
+            'std': std_t,
+            'success_count': success_count,
+        }
+
+    return results_summary

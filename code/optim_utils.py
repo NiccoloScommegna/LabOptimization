@@ -324,7 +324,8 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
         alpha, ls_info = strong_wolfe_line_search(f=f, g=g, xk=xk, dk=dk, c1=c1, c2=c2, alpha_l=alpha_l, alpha_u=alpha_u, max_iter=max_line_search_iter, eps_f=eps_f, eps_g=eps_g, rng=rng)
         # se non trovato, usa Armijo come fallback
         if alpha is None:
-            alpha, armijo_line_search_info = armijo_line_search(f=f, g=g, xk=xk, dk=dk, eps_f=eps_f, eps_g=eps_g, rng=rng)
+            alpha = armijo_line_search(f=f, g=g, xk=xk, dk=dk, eps_f=eps_f, eps_g=eps_g, rng=rng)
+            print(f"Warning: strong Wolfe line search failed at iteration {k}, using Armijo fallback with alpha={alpha}")
 
         # aggiornamento
         x_next = xk + alpha * dk

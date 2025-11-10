@@ -138,7 +138,8 @@ if __name__ == "__main__":
                'bfgs_with_noisy_function', 
                'bfgs_noisy_with_noisy_function']
     
-    test.run_and_print(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000)
+    # test.run_and_print(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000)
+    summary = test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000, n_runs=50, quiet=False)
     
     # test.run_and_print(problem_name='BRKMCC', methods=methods, eps_f=1e-7, eps_g=1e-7, tol_factor=10, max_iter=10000)
 
