@@ -8,6 +8,7 @@ import contextlib
 import io
 from typing import Dict, List, Optional, Tuple
 import numpy as np
+from scipy.optimize import minimize
 
 import plotting
 
@@ -82,7 +83,9 @@ _VALID_METHODS = {
     'gd_armijo_with_noisy_function',
     'bfgs_with_base_function',
     'bfgs_with_noisy_function',
-    'bfgs_noisy_with_noisy_function'
+    'bfgs_noisy_with_noisy_function',
+    'scipy_bfgs_with_base_function',
+    'scipy_bfgs_with_noisy_function',
 }
 
 
@@ -90,19 +93,18 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
     """
     Esegue uno dei metodi implementati in optim_utils sul problema PyCUTEst `p`.
 
-    method in {'gd_armijo_with_base_function', 
-               'gd_armijo_with_noisy_function', 
-               'bfgs_with_base_function', 
-               'bfgs_with_noisy_function', 
-               'bfgs_noisy_with_noisy_function'}
+    method in _VALID_METHODS
     """
     if method not in _VALID_METHODS:
         raise ValueError(f"Metodo non riconosciuto: {method}")
 
     x0 = p.x0
     n = p.n
-    f = lambda x: p.obj(x)
-    g = lambda x: p.grad(x)
+    # f = lambda x: p.obj(x)
+    # g = lambda x: p.grad(x)
+
+    f = lambda x: float(p.obj(x))
+    g = lambda x: np.asarray(p.grad(x), dtype=float)
 
     tol = choose_tol_from_noise(eps_g, n, factor=tol_factor, tol_min=1e-12)
 
@@ -131,15 +133,19 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             
             elapsed = time.perf_counter() - start
             nit = out.get('nit', None)
-            fval = out.get('f_history', [None])[-1] if out.get('f_history') else _safe_eval(f, xmin)
             f_history = [float(v) for v in out.get('f_history', [])] if out.get('f_history') else []
+            fval = float(f_history[-1]) if f_history else _safe_eval(f, xmin)
+            grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
+            
             info.update({
                 # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
                 
-                'f_val': float(fval) if fval is not None else float('nan'),
+                'f_val': fval,
 
                 'f_history': f_history,
+
+                'grad_norms': grad_norms,
                 
                 # 'f_history_len': len(f_values),
                 'n_iter': nit,
@@ -158,15 +164,19 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             
             elapsed = time.perf_counter() - start
             nit = out.get('nit', None)
-            fval = out.get('f_history', [None])[-1] if out.get('f_history') else _safe_eval(f, xmin)
             f_history = [float(v) for v in out.get('f_history', [])] if out.get('f_history') else []
+            fval = float(f_history[-1]) if f_history else _safe_eval(f, xmin)
+            grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
+            
             info.update({
                 # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
                 
-                'f_val': float(fval) if fval is not None else float('nan'),
+                'f_val': fval,
 
                 'f_history': f_history,
+
+                'grad_norms': grad_norms,
                 
                 # 'f_history_len': len(f_values),
                 'n_iter': nit,
@@ -183,16 +193,20 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             
             elapsed = time.perf_counter() - start
             nit = out.get('nit', None)
-            fval = out.get('f_history', [None])[-1] if out.get('f_history') else _safe_eval(f, xmin)
             f_history = [float(v) for v in out.get('f_history', [])] if out.get('f_history') else []
+            fval = float(f_history[-1]) if f_history else _safe_eval(f, xmin)
+            grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
+            
             info.update({
                 # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
 
                 # 'f_val': float(out['f_history'][-1]) if out.get('f_history') else float(_safe_eval(f, xmin)),
-                'f_val': float(fval) if fval is not None else float('nan'),
+                'f_val': fval,
 
                 'f_history': f_history,
+
+                'grad_norms': grad_norms,
 
                 # 'nit': out.get('nit'),
                 'n_iter': nit,
@@ -215,16 +229,20 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             
             elapsed = time.perf_counter() - start
             nit = out.get('nit', None)
-            fval = out.get('f_history', [None])[-1] if out.get('f_history') else _safe_eval(f, xmin)
             f_history = [float(v) for v in out.get('f_history', [])] if out.get('f_history') else []
+            fval = float(f_history[-1]) if f_history else _safe_eval(f, xmin)
+            grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
+            
             info.update({
                 # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
 
                 # 'f_val': float(out['f_history'][-1]) if out.get('f_history') else float(_safe_eval(f, xmin)),
-                'f_val': float(fval) if fval is not None else float('nan'),
+                'f_val': fval,
 
                 'f_history': f_history,
+
+                'grad_norms': grad_norms,
 
                 # 'nit': out.get('nit'),
                 'n_iter': nit,
@@ -247,16 +265,20 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             
             elapsed = time.perf_counter() - start
             nit = out.get('nit', None)
-            fval = out.get('f_history', [None])[-1] if out.get('f_history') else _safe_eval(f, xmin)
             f_history = [float(v) for v in out.get('f_history', [])] if out.get('f_history') else []
+            fval = float(f_history[-1]) if f_history else _safe_eval(f, xmin)
+            grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
+            
             info.update({
                 # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
 
                 # 'f_val': float(out['f_history'][-1]) if out.get('f_history') else float(_safe_eval(f, xmin)),
-                'f_val': float(fval) if fval is not None else float('nan'),
+                'f_val': fval,
 
                 'f_history': f_history,
+
+                'grad_norms': grad_norms,
 
                 # 'nit': out.get('nit'),
                 'n_iter': nit,
@@ -267,6 +289,81 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
                 # 'grad_norms': [float(v) for v in out.get('grad_norms', [])],
                 # 'ls_history': out.get('ls_history', []),
                 'ls_info': out.get('ls_history', []),
+            })
+
+        elif method in ('scipy_bfgs_with_base_function', 'scipy_bfgs_with_noisy_function'):
+            noisy = (method == 'scipy_bfgs_with_noisy_function')
+            print(f"SciPy BFGS (noisy={noisy}), eps_f={eps_f}, eps_g={eps_g}, tol={tol}")
+            # costruttori wrappers che usano la rng passata quando noisy=True
+            f_hist = []
+            grad_norms = []
+
+            def f_wrapper(x):
+                # x potrebbe essere array-like
+                x_arr = np.asarray(x, dtype=float)
+                val = float(p.obj(x_arr))
+                if noisy and eps_f and eps_f > 0:
+                    val = val + float(rng.normal(loc=0.0, scale=eps_f))
+                return val
+
+            def g_wrapper(x):
+                x_arr = np.asarray(x, dtype=float)
+                grad = np.asarray(p.grad(x_arr), dtype=float)
+                if noisy and eps_g and eps_g > 0:
+                    grad = grad + rng.normal(loc=0.0, scale=eps_g, size=grad.shape)
+                return grad
+
+            # callback per registrare la storia (viene chiamato con xk)
+            def cb(xk):
+                try:
+                    # registra valore funzione (con eventuale rumore se noisy=True)
+                    f_hist.append(float(f_wrapper(xk)))
+                except Exception:
+                    # ignora errori interni alla callback
+                    pass
+                try:
+                    # registra norma del gradiente (con eventuale rumore se noisy=True)
+                    gk = g_wrapper(xk)
+                    grad_norms.append(float(np.linalg.norm(gk)))
+                except Exception:
+                    pass
+
+            # opzioni: maxiter come da input
+            start = time.perf_counter()
+            res = minimize(fun=f_wrapper, x0=x0, jac=g_wrapper, method='BFGS',
+                           callback=cb, options={'maxiter': max_iter, 'disp': False})
+            elapsed = time.perf_counter() - start
+
+            # estrai informazioni
+            xmin = np.asarray(res.x, dtype=float)
+            nit = getattr(res, 'nit', None) or res.get('nit', None) if isinstance(res, dict) else getattr(res, 'nit', None)
+
+            # se callback non è stato chiamato mai, almeno registra il valore iniziale e finale
+            if len(f_hist) == 0:
+                try:
+                    f_hist = [float(f_wrapper(x0)), float(f_wrapper(xmin))]
+                except Exception:
+                    f_hist = []
+            
+            # se non abbiamo norme dei gradienti registrate, calcoliamo almeno quelle in x0 e xmin
+            if len(grad_norms) == 0:
+                try:
+                    g0 = g_wrapper(x0)
+                    gmin = g_wrapper(xmin)
+                    grad_norms = [float(np.linalg.norm(g0)), float(np.linalg.norm(gmin))]
+                except Exception:
+                    grad_norms = []
+            
+            fval = float(f_hist[-1]) if f_hist else float(_safe_eval(lambda x: f_wrapper(x), xmin))
+
+            info.update({
+                'x_min': xmin.tolist(),
+                'f_val': fval,
+                'f_history': [float(v) for v in f_hist],
+                'grad_norms': [float(v) for v in grad_norms],
+                'n_iter': nit,
+                'elapsed': elapsed,
+                'scipy_result': res
             })
 
         else:
@@ -376,7 +473,7 @@ def run_and_print(problem_name: str, methods: List[str], eps_f: float = 1e-7, ep
     if all_empty_grad:
         print("Attenzione: nessuna storia delle norme del gradiente disponibile per i metodi eseguiti. Niente da plottare.")
     else:
-        plotting.plot_gradient_norm_histories(grad_norms_histories, method_labels, problem_name=prob_id)
+        plotting.plot_gradient_norm_histories(grad_norms_histories, method_labels, problem_name=prob_id, logy=True)
 
 
 
