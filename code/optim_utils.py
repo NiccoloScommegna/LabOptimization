@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Callable, Tuple, List, Dict, Optional
+import logging
 
 
 # -----------------------
@@ -84,7 +85,43 @@ def armijo_line_search(f: Callable[[np.ndarray], float],
     return alpha
 
 
-# Metodo di discesa del gradiente con ricerca del passo di Armijo
+# # Metodo di discesa del gradiente con ricerca del passo di Armijo
+# def gradient_descent_armijo(f: Callable[[np.ndarray], float],
+#                             g: Callable[[np.ndarray], np.ndarray],
+#                             x0: np.ndarray,
+#                             tol: float = 1e-6,
+#                             maxiter: int = 100000,
+#                             alpha0: float = 1.0,
+#                             sigma: float = 0.5,
+#                             c1: float = 1e-4,
+#                             max_line_search_iter: int = 1000,
+#                             eps_f: Optional[float] = None,
+#                             eps_g: Optional[float] = None,
+#                             rng: Optional[np.random.Generator] = None) -> Tuple[np.ndarray, List[float]]:
+#     """
+#     Metodo di discesa del gradiente con ricerca del passo secondo la condizione di Armijo.
+#     Ritorna il punto minimo trovato e la lista dei valori della funzione obiettivo ad ogni iterazione.
+#     """
+#     if rng is None:
+#         rng = np.random.default_rng()
+
+#     xk = x0
+#     f_values: List[float] = [float(_eval_f_noisy(f, xk, eps_f, rng))]
+
+#     gk = _eval_g_noisy(g, xk, eps_g, rng)
+#     iter = 0
+#     while (vecnorm(gk) > tol) and (iter < maxiter):
+#         dk = -gk
+#         alpha = armijo_line_search(f=f, g=g, xk=xk, dk=dk, alpha0=alpha0, sigma=sigma, c1=c1, maxiter=max_line_search_iter, eps_f=eps_f, eps_g=eps_g, rng=rng)
+#         xk = xk + alpha * dk
+#         f_values.append(float(_eval_f_noisy(f, xk, eps_f, rng)))
+#         gk = _eval_g_noisy(g, xk, eps_g, rng)
+#         iter += 1
+#     if iter == maxiter:
+#         print("Warning: discesa del gradiente ha raggiunto il numero massimo di iterazioni")
+#     return xk, f_values
+
+
 def gradient_descent_armijo(f: Callable[[np.ndarray], float],
                             g: Callable[[np.ndarray], np.ndarray],
                             x0: np.ndarray,
@@ -96,29 +133,74 @@ def gradient_descent_armijo(f: Callable[[np.ndarray], float],
                             max_line_search_iter: int = 1000,
                             eps_f: Optional[float] = None,
                             eps_g: Optional[float] = None,
-                            rng: Optional[np.random.Generator] = None) -> Tuple[np.ndarray, List[float]]:
+                            rng: Optional[np.random.Generator] = None) -> Tuple[np.ndarray, Dict]:
     """
     Metodo di discesa del gradiente con ricerca del passo secondo la condizione di Armijo.
-    Ritorna il punto minimo trovato e la lista dei valori della funzione obiettivo ad ogni iterazione.
+    Ritorna (x_min, info) dove info è un dict con:
+      - 'status': 'converged' | 'max_iter_reached' | 'bad_direction' | 'error'
+      - 'nit' : numero di iterazioni completate
+      - 'x_history' : lista di np.ndarray (punti)
+      - 'f_history' : lista dei valori di f (float)
+      - 'grad_norms' : lista delle norme del gradiente (float)
     """
     if rng is None:
         rng = np.random.default_rng()
 
-    xk = x0
-    f_values: List[float] = [float(_eval_f_noisy(f, xk, eps_f, rng))]
+    xk = np.asarray(x0, dtype=float).copy()
 
+    # storici
+    x_history: List[np.ndarray] = [xk.copy()]
+    f_history: List[float] = [float(_eval_f_noisy(f, xk, eps_f, rng))]
     gk = _eval_g_noisy(g, xk, eps_g, rng)
-    iter = 0
-    while (vecnorm(gk) > tol) and (iter < maxiter):
-        dk = -gk
-        alpha = armijo_line_search(f=f, g=g, xk=xk, dk=dk, alpha0=alpha0, sigma=sigma, c1=c1, maxiter=max_line_search_iter, eps_f=eps_f, eps_g=eps_g, rng=rng)
-        xk = xk + alpha * dk
-        f_values.append(float(_eval_f_noisy(f, xk, eps_f, rng)))
-        gk = _eval_g_noisy(g, xk, eps_g, rng)
-        iter += 1
-    if iter == maxiter:
-        print("Warning: discesa del gradiente ha raggiunto il numero massimo di iterazioni")
-    return xk, f_values
+    grad_norms: List[float] = [vecnorm(gk)]
+
+    k = 0
+    status = 'max_iter_reached'  # valore di default, sovrascritto se converge o altro
+
+    try:
+        while (vecnorm(gk) > tol) and (k < maxiter):
+            dk = -gk
+            # verifica che dk sia direzione di discesa
+            if float(np.dot(gk, dk)) >= 0:
+                status = 'bad_direction'
+                break
+
+            alpha = armijo_line_search(f=f, g=g, xk=xk, dk=dk, alpha0=alpha0,
+                                       sigma=sigma, c1=c1, maxiter=max_line_search_iter,
+                                       eps_f=eps_f, eps_g=eps_g, rng=rng)
+
+            xk = xk + alpha * dk
+
+            # aggiorna storici
+            fx = float(_eval_f_noisy(f, xk, eps_f, rng))
+            f_history.append(fx)
+            x_history.append(xk.copy())
+
+            gk = _eval_g_noisy(g, xk, eps_g, rng)
+            grad_norms.append(vecnorm(gk))
+
+            k += 1
+
+        # stato finale
+        if vecnorm(gk) <= tol:
+            status = 'converged'
+        elif status != 'bad_direction' and k >= maxiter:
+            status = 'max_iter_reached'
+
+    except Exception as e:
+        # in caso di eccezione registriamo lo stato e rilanciamo l'errore nel dict
+        status = 'error'
+        logging.exception("Errore nella discesa del gradiente con Armijo: %s", e)
+
+    info: Dict = {
+        'status': status,
+        'nit': k,
+        'x_history': x_history,
+        'f_history': f_history,
+        'grad_norms': grad_norms
+    }
+
+    return xk, info
 
 
 def check_strong_wolfe(f: Callable[[np.ndarray], float], 

@@ -125,21 +125,24 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
         if method == 'gd_armijo_with_base_function':
             print(f"Tolleranza usata: {tol}")
             start = time.perf_counter()
-            xmin, f_values = optim_utils.gradient_descent_armijo(f=f, g=g, x0=x0, 
-                                                                 tol=tol, maxiter=max_iter
-                                                                 )
+            xmin, out = optim_utils.gradient_descent_armijo(f=f, g=g, x0=x0, 
+                                                            tol=tol, maxiter=max_iter
+                                                            )
             
             elapsed = time.perf_counter() - start
+            nit = out.get('nit', None)
+            fval = out.get('f_history', [None])[-1] if out.get('f_history') else _safe_eval(f, xmin)
+            f_history = [float(v) for v in out.get('f_history', [])] if out.get('f_history') else []
             info.update({
                 # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
                 
-                'f_val': float(_safe_eval(f, xmin)),
+                'f_val': float(fval) if fval is not None else float('nan'),
 
-                'f_history': [float(v) for v in f_values],
+                'f_history': f_history,
                 
                 # 'f_history_len': len(f_values),
-                'n_iter': max(0, len(f_values) - 1),
+                'n_iter': nit,
                 
                 'elapsed': elapsed,
             })
@@ -148,22 +151,25 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             print(f"Rumore eps_f: {eps_f}, eps_g: {eps_g}")
             print(f"Tolleranza usata: {tol}")
             start = time.perf_counter()
-            xmin, f_values = optim_utils.gradient_descent_armijo(f=f, g=g, x0=x0, 
+            xmin, out = optim_utils.gradient_descent_armijo(f=f, g=g, x0=x0, 
                                                                  tol=tol, maxiter=max_iter, 
                                                                  eps_f=eps_f, eps_g=eps_g, rng=rng
                                                                  )
             
             elapsed = time.perf_counter() - start
+            nit = out.get('nit', None)
+            fval = out.get('f_history', [None])[-1] if out.get('f_history') else _safe_eval(f, xmin)
+            f_history = [float(v) for v in out.get('f_history', [])] if out.get('f_history') else []
             info.update({
                 # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
                 
-                'f_val': float(_safe_eval(f, xmin)),
+                'f_val': float(fval) if fval is not None else float('nan'),
 
-                'f_history': [float(v) for v in f_values],
+                'f_history': f_history,
                 
                 # 'f_history_len': len(f_values),
-                'n_iter': max(0, len(f_values) - 1),
+                'n_iter': nit,
                 
                 'elapsed': elapsed,
             })
@@ -298,6 +304,9 @@ def run_and_print(problem_name: str, methods: List[str], eps_f: float = 1e-7, ep
     - Numero di iterazioni
     - Tempo impiegato (s)
 
+    Inoltre, raccoglie le storie dei valori di f e delle norme del gradiente per ciascun metodo
+    e disegna i grafici usando plotting.plot_function_histories e plotting.plot_gradient_norm_histories.
+
     """
     rng_master = np.random.default_rng(seed)
 
@@ -312,7 +321,8 @@ def run_and_print(problem_name: str, methods: List[str], eps_f: float = 1e-7, ep
     n = getattr(p, 'n', None)
 
     # raccolte per il plotting
-    histories = []       # lista di liste di valori di f per ogni metodo
+    f_histories = []       # lista di liste di valori di f per ogni metodo
+    grad_norms_histories = []  # lista di liste di norme del gradiente per ogni metodo
     method_labels = []   # etichette corrispondenti
 
     for method in methods:
@@ -337,22 +347,37 @@ def run_and_print(problem_name: str, methods: List[str], eps_f: float = 1e-7, ep
         print("----------------------------------------")
 
         # raccolta dati per il plotting
-        hist = None
+        f_hist = None
+        grad_norms_hist = None
 
         if 'f_history' in res and isinstance(res['f_history'], list):
-            hist = [float(v) for v in res['f_history']]
+            f_hist = [float(v) for v in res['f_history']]
         else:
-            hist = []
+            f_hist = []
+
+        if 'grad_norms' in res and isinstance(res['grad_norms'], list):
+            grad_norms_hist = [float(v) for v in res['grad_norms']]
+        else:
+            grad_norms_hist = []
             
-        histories.append(hist)
+        f_histories.append(f_hist)
+        grad_norms_histories.append(grad_norms_hist)
         method_labels.append(method)
 
     # Disegna il grafico con le storie dei valori di f per i metodi eseguiti sul problema
-    all_empty = all(len(h) == 0 for h in histories)
-    if all_empty:
+    all_empty_f = all(len(h) == 0 for h in f_histories)
+    if all_empty_f:
         print("Attenzione: nessuna storia dei valori della funzione disponibile per i metodi eseguiti. Niente da plottare.")
     else:
-        plotting.plot_function_histories(histories, method_labels, problem_name=prob_id)
+        plotting.plot_function_histories(f_histories, method_labels, problem_name=prob_id)
+
+    # Disegna il grafico con le storie delle norme del gradiente per i metodi eseguiti sul problema
+    all_empty_grad = all(len(h) == 0 for h in grad_norms_histories)
+    if all_empty_grad:
+        print("Attenzione: nessuna storia delle norme del gradiente disponibile per i metodi eseguiti. Niente da plottare.")
+    else:
+        plotting.plot_gradient_norm_histories(grad_norms_histories, method_labels, problem_name=prob_id)
+
 
 
 def repeat_timing(problem_name: str,
