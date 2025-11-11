@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 import os
 import numpy as np
 import matplotlib.pyplot as plt

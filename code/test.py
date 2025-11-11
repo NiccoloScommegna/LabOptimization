@@ -1,12 +1,9 @@
 from __future__ import annotations
-import argparse
-import json
 import logging
-import os
 import time
 import contextlib
 import io
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import numpy as np
 from scipy.optimize import minimize
 
@@ -100,8 +97,6 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
 
     x0 = p.x0
     n = p.n
-    # f = lambda x: p.obj(x)
-    # g = lambda x: p.grad(x)
 
     f = lambda x: float(p.obj(x))
     g = lambda x: np.asarray(p.grad(x), dtype=float)
@@ -110,13 +105,11 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
 
     info: Dict = {
         'method': method,
-        # 'problem': p.name,
         'problem': getattr(p, 'name', None) or getattr(p, 'probname', None) or str(p),
         'n': n,
         'eps_f': eps_f,
         'eps_g': eps_g,
         'tol': tol,
-        # 'start_time': time.time(),
     }
     
     # backup_start esiste sempre per evitare errori in caso di eccezioni prima di settare start 
@@ -138,18 +131,11 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
             
             info.update({
-                # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
-                
                 'f_val': fval,
-
                 'f_history': f_history,
-
                 'grad_norms': grad_norms,
-                
-                # 'f_history_len': len(f_values),
                 'n_iter': nit,
-                
                 'elapsed': elapsed,
             })
 
@@ -169,18 +155,11 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
             
             info.update({
-                # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
-                
                 'f_val': fval,
-
                 'f_history': f_history,
-
                 'grad_norms': grad_norms,
-                
-                # 'f_history_len': len(f_values),
                 'n_iter': nit,
-                
                 'elapsed': elapsed,
             })
 
@@ -198,23 +177,12 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
             
             info.update({
-                # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
-
-                # 'f_val': float(out['f_history'][-1]) if out.get('f_history') else float(_safe_eval(f, xmin)),
                 'f_val': fval,
-
                 'f_history': f_history,
-
                 'grad_norms': grad_norms,
-
-                # 'nit': out.get('nit'),
                 'n_iter': nit,
-
                 'elapsed': elapsed,
-
-                # 'f_history_len': len(out.get('f_history', [])),
-                # 'grad_norms': [float(v) for v in out.get('grad_norms', [])],
                 'ls_info': out
             })
 
@@ -234,23 +202,12 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
             
             info.update({
-                # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
-
-                # 'f_val': float(out['f_history'][-1]) if out.get('f_history') else float(_safe_eval(f, xmin)),
                 'f_val': fval,
-
                 'f_history': f_history,
-
                 'grad_norms': grad_norms,
-
-                # 'nit': out.get('nit'),
                 'n_iter': nit,
-
                 'elapsed': elapsed,
-
-                # 'f_history_len': len(out.get('f_history', [])),
-                # 'grad_norms': [float(v) for v in out.get('grad_norms', [])],
                 'ls_info': out
             })
 
@@ -270,24 +227,12 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             grad_norms = [float(v) for v in out.get('grad_norms', [])] if out.get('grad_norms') else []
             
             info.update({
-                # 'x': xmin.tolist(),
                 'x_min': np.asarray(xmin).tolist(),
-
-                # 'f_val': float(out['f_history'][-1]) if out.get('f_history') else float(_safe_eval(f, xmin)),
                 'f_val': fval,
-
                 'f_history': f_history,
-
                 'grad_norms': grad_norms,
-
-                # 'nit': out.get('nit'),
                 'n_iter': nit,
-
                 'elapsed': elapsed,
-
-                # 'f_history_len': len(out.get('f_history', [])),
-                # 'grad_norms': [float(v) for v in out.get('grad_norms', [])],
-                # 'ls_history': out.get('ls_history', []),
                 'ls_info': out.get('ls_history', []),
             })
 
@@ -388,7 +333,7 @@ def _safe_eval(f_callable, x):
         return float('nan')
 
 
-def run_and_print(problem_name: str, methods: List[str], eps_f: float = 1e-7, eps_g: float = 1e-7, seed: int = 42, tol_factor: float = 10.0, max_iter: int = 10000, sif_params: Optional[Dict] = None) -> None:
+def run_and_show_result(problem_name: str, methods: List[str], eps_f: float = 1e-7, eps_g: float = 1e-7, seed: int = 42, tol_factor: float = 10.0, max_iter: int = 10000, sif_params: Optional[Dict] = None) -> None:
     """
     Esegue i metodi su ciascun problema e stampa a schermo alcuni risultati.
 
@@ -430,7 +375,6 @@ def run_and_print(problem_name: str, methods: List[str], eps_f: float = 1e-7, ep
         if sif_params:
             print(f"SIF params: {sif_params}")
         print(f"Dimensione n: {n}")
-        # print(f"Rumore: eps_f={eps_f}, eps_g={eps_g}")
 
         res = run_method_on_problem(p, method=method, eps_f=eps_f, eps_g=eps_g, rng=subrng, tol_factor=tol_factor, max_iter=max_iter)
 
