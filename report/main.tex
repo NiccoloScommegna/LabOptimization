@@ -1,19 +1,50 @@
 \documentclass[a4paper,12pt]{article}
 
 \usepackage[utf8]{inputenc}
-\usepackage{graphicx}
-\usepackage{amsmath}
-\usepackage{hyperref}
+\usepackage[english,italian]{babel} % Lingua principale italiano, con parti in inglese
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath} % Required for mathematical formulas
+\usepackage{amssymb}  % o \usepackage{amsfonts}
+\usepackage{hyperref} % Required for hyperlinks
+\usepackage[a4paper,top=3cm,bottom=3cm,left=3cm,right=3cm]{geometry} % impaginazione e margini pagina
+\usepackage{cite} % gestione citazioni
+
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=blue,      
+    urlcolor=blue,
+    pdftitle={Laboratorio di Optimization Methods},
+    pdfpagemode=FullScreen,
+    }
+\urlstyle{same}
+\raggedbottom{} % Se la pagina non è completa, lascia lo spazio alla fine
+\pagestyle{headings}
 
 \title{Laboratorio di Optimization Methods}
 \author{Niccolò Scommegna}
 \date{\today}
 
 \begin{document}
+\include{sections/00_frontespizio}
 
-\maketitle
+% Indice
+\tableofcontents
+\newpage
 
+% Inizio del documento effettivo
 \input{sections/01_introduzione.tex}
+\input{sections/02_nozioni_teoriche.tex}
+
+
+\newpage
+% Bibliografia
+\bibliographystyle{plain}
+\bibliography{sections/biblio}
+% \addcontentsline{toc}{chapter}{Bibliografia}
+
+
 
 
 \end{document}
