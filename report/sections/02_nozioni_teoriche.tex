@@ -1,2 +1,41 @@
 \section{Nozioni Teoriche}\label{sec:nozioni_teoriche}
-Gli algoritmi per l'ottimizzazione non vincolata mirano a trovare il minimo di una funzione obiettivo \( f: \mathbb{R}^n \rightarrow \mathbb{R} \) utilizzando informazioni sulla funzione stessa, come il gradiente e la matrice Hessiana. In questa sezione vengono descritte le nozioni teoriche fondamentali alla base degli algoritmi implementati nel progetto, in particolare l'algoritmo di discesa del gradiente, l'algoritmo BFGS e l'algoritmo Quasi-Newton tollerante al rumore proposto da Shi et al.\cite{shi2022noise}. Il metodo di discesa del gradiente utilizza come direzione di discesa l'antigradiente della funzione obiettivo \(- \nabla f(x_k)\) e richiede la scelta di uno scalare \( \alpha_k \) per determinare la lunghezza del passo. Una pratica comune è la ricerca di \( \alpha_k \) tramite line search, che può essere eseguita utilizzando condizioni di Armijo o Wolfe. 
+Gli algoritmi per l'ottimizzazione non vincolata mirano a trovare il minimo di una funzione obiettivo \( f: \mathbb{R}^n \rightarrow \mathbb{R} \) utilizzando informazioni sulla funzione stessa, come il gradiente e la matrice Hessiana. In questa sezione vengono descritte le nozioni teoriche fondamentali alla base degli algoritmi implementati nel progetto, in particolare l'algoritmo di discesa del gradiente, l'algoritmo BFGS e l'algoritmo Quasi-Newton tollerante al rumore proposto da Shi et al.\cite{shi2022noise}. Il metodo di discesa del gradiente utilizza come direzione di discesa l'antigradiente della funzione obiettivo \(- \nabla f(x_k)\) e richiede la scelta di uno scalare \( \alpha_k \) per determinare la lunghezza del passo. Una pratica comune è la ricerca di \( \alpha_k \) tramite line search, che può essere eseguita utilizzando condizioni di Armijo o Wolfe. Queste condizioni garantiscono che il passo scelto riduca sufficientemente il valore della funzione obiettivo e che la variazione del gradiente lungo la direzione di discesa sia compatibile con la curvatura locale della funzione. In notazione tipica, la condizione di Armijo si scrive come:
+\begin{equation}
+f(x_k + \alpha_k d_k) \leq f(x_k) + c_1 \alpha_k \nabla {f(x_k)}^T d_k,
+\end{equation}
+dove \( c_1 \in (0,1) \) è una costante predefinita e \( d_k \) è la direzione di discesa.
+Per quanto riguarda le condizioni di Wolfe, esse includono sia la condizione di Armijo che una condizione di curvatura. Nel complesso le condizioni forti di Wolfe si esprimono come:
+\begin{equation}\label{eq:armijo}
+    f(x_k + \alpha_k d_k) \leq f(x_k) + c_1 \alpha_k \nabla {f(x_k)}^T d_k,
+\end{equation}
+\begin{equation}\label{eq:strong_wolfe}
+    |\nabla {f(x_k + \alpha_k d_k)}^T d_k| \leq c_2 |\nabla {f(x_k)}^T d_k|,
+\end{equation}
+dove \( c_2 \in (c_1,1) \) è un'altra costante predefinita.
+
+L'algoritmo BFGS è un metodo Quasi-Newton che costruisce un'approssimazione della matrice Hessiana \( B_k \) basata sui gradienti calcolati nei punti precedenti e la differenza tra i punti delle iterazioni. La matrice \( B_k \) viene aggiornata ad ogni iterazione utilizzando la formula di aggiornamento di BFGS:\@
+\begin{equation}\label{eq:bfgs_update}
+B_{k+1} = B_k + \frac{y_k y_k^T}{s_k^T y_k} - \frac{B_k s_k s_k^T B_k}{s_k^T B_k s_k},
+\end{equation}
+dove \( s_k = x_{k+1} - x_k \) e \( y_k = \nabla f(x_{k+1}) - \nabla f(x_k) \). Perché l'aggiornamento sia ben definito, e soprattutto per garantire che \( B_{k+1} \) sia definita positiva, è necessario e sufficiente che \( s_k^T y_k > 0 \). Le condizioni di Wolfe forti sono tipicamente impiegate per assicurare questa proprietà e quindi preservare la definita positività della matrice approssimata della Hessiana ad ogni iterazione. Senza una corretta scelta del passo, che soddisfi tali condizioni, l'aggiornamento potrebbe degenerare e la matrice approssimata potrebbe diventare mal condizionata.
+
+Nell'articolo di Shi et al.\cite{shi2022noise}, si osserva che in presenza di errori (rumore) nella valutazione della funzione e del gradiente, il classico schema BFGS può fallire: differenze di gradiente \(y_k\) calcolate su passi troppo piccoli possono essere dominate dal rumore e corrompere l’aggiornamento. Per mitigare questo problema, gli autori propongono modifiche pratiche all'algoritmo BFGS.\@ Gli elementi chiave dell'algoritmo BFGS tollerante al rumore sono:
+\begin{itemize}
+
+    \item \textbf{Condizione di controllo del rumore e lengthening}: oltre ad usare le condizioni di Wolfe forti (\ref{eq:armijo},~\ref{eq:strong_wolfe}) per determinare il passo \( \alpha_k \), viene introdotto il parametro di lengthening (allungamento) \( \beta_k \geq \alpha_k \) e richiedono la noise control condition:
+    \begin{equation}\label{eq:noise_condition}
+        {(\nabla f(x_k + \beta_k d_k) - \nabla f(x_k))}^T d_k \geq 2(1 + c_3) \epsilon_g \|d_k\|,
+    \end{equation}
+    dove \( c_3 > 0 \) è una costante predefinita e \( \epsilon_g \) è una stima superiore del rumore sul gradiente. Questa condizione garantisce che la differenza osservata nei gradienti sia sufficientemente grande rispetto al rumore e quindi che \(y_k\) rifletta la curvatura vera e non solo il rumore. Se \( \alpha_k \) non produce un \(y_k\) affidabile, l’algoritmo allunga il passo (aumenta \( \beta_k \)) fino a raccogliere una differenza di gradienti significativa.
+
+    \item \textbf{Line search a due fasi tollerante al rumore}: la procedure proposta è una line search a due fasi, nella prima fase si cerca un \( \alpha_k \) che soddisfi contemporaneamente le condizioni di Wolfe forti (\ref{eq:armijo},~\ref{eq:strong_wolfe}) e la noise control condition (\ref{eq:noise_condition}). In questo caso si pone \( \beta_k = \alpha_k \). Se non si riesce a trovare tale \( \alpha_k \), si entra nella seconda fase, in cui si cerca un \( \alpha_k \) che soddisfi la condizione di Armijo e un \( \beta_k \geq \alpha_k \) che soddisfi solo la noise control condition. In questo modo, l'algoritmo garantisce che l'aggiornamento della matrice Hessiana sia basato su informazioni affidabili, anche in presenza di rumore. 
+    
+    \item \textbf{Aggiornamento della matrice \( \beta_k \)}: una volta determinati \( \alpha_k \) e \( \beta_k \), l'aggiornamento della matrice Hessiana approssimata \( B_k \) viene eseguito con la stessa formula dell'algoritmo BFGS (\ref{eq:bfgs_update}), ma utilizzando 
+    \[
+        s_k = \beta_k d_k,\qquad y_k = \nabla f(x_k + \beta_k d_k) - \nabla f(x_k).
+    \]
+    Questo assicura che l'aggiornamento sia basato su una differenza di gradienti che supera il rumore, migliorando la stabilità e l'affidabilità dell'algoritmo in contesti rumorosi.
+    
+\end{itemize}
+
+Il contributo principale del paper non è cambiare la struttura fondamentale dell'algoritmo BFGS, ma rendere robusto l'algoritmo esistente in presenza di rumore, introducendo meccanismi per garantire che le informazioni utilizzate per aggiornare la matrice Hessiana siano affidabili. Queste modifiche permettono a BFGS tollerante al rumore di conservare i vantaggi dei metodi Quasi-Newton, anche quando le valutazioni sono affette da errori.
