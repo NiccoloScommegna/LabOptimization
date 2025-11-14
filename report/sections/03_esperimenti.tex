@@ -1,0 +1,22 @@
+\section{Esperimenti}\label{sec:esperimenti}
+In questa sezione vengono presentati gli esperimenti volti a valutare le prestazioni dell’algoritmo BFGS tollerante al rumore, confrontandolo con BFGS classico (sia nella versione implementata personalmente sia nella versione fornita dalla libreria \texttt{SciPy}) e con il metodo di discesa del gradiente implementato personalmente. Gli esperimenti sono stati eseguiti su un benchmark di sei problemi presi dalla libreria \texttt{PyCUTEst}.
+Per ciascun metodo è stato registrato: il numero di iterazioni necessarie per la convergenza (definita come norma del gradiente inferiore a un valore tolleranza), l’andamento dei valori della funzione obiettivo e del gradiente ad ogni iterazione, e il tempo di esecuzione totale.
+Per gli algoritmi progettati per problemi non rumorosi abbiamo valutato le prestazioni sia su funzioni prive di rumore sia su funzioni rumorose, in modo da evidenziare l’effetto del rumore sugli algoritmi classici e successivamente verificare l’efficacia della versione BFGS tollerante al rumore. Nei paragrafi successivi sono riportati i dettagli i risultati ottenuti, presentati sia in forma tabellare che grafica.
+
+Prima di passare ai risultati, viene fornita una breve panoramica dei dettagli tecnici degli esperimenti:
+
+\begin{itemize}
+    \item \textbf{Ricerca di linea}: per il metodo di discesa del gradiente (GD) è stata implementata una ricerca di linea che utilizza la sola \emph{condizione di Armijo}. Per BFGS classico è stata implementata una ricerca di linea che soddisfa le \emph{condizioni di Wolfe forti}. Per BFGS tollerante al rumore la ricerca di linea è basata sulle stesse Condizioni di Wolfe forti, con l’aggiunta della \emph{condizione di controllo del rumore} descritta nella Sezione~\ref{sec:nozioni_teoriche}.
+    
+    \item \textbf{Aggiunta di rumore}: ad ogni valutazione della funzione obiettivo e del gradiente è stato aggiunto rumore gaussiano \(\mathcal{N}(0,\sigma^2)\), dove \(\sigma\) è il livello di rumore scelto per l’esperimento. Alla valutazione scalare della funzione obiettivo si somma un termine scalare di rumore; al gradiente si aggiunge invece un vettore di rumore, perturbando ciascuna componente.
+
+    \item \textbf{Tolleranza}: una volta fissati i livelli di rumore (in particolare quello sul gradiente), la tolleranza per la condizione di arresto è stata determinata in modo dinamico affinché risultasse sempre maggiore del rumore sul gradiente. In questo modo si evita che il rumore impedisca la terminazione degli algoritmi. Inoltre, per garantire la coerenza nel confronto tra metodi, la stessa regola è stata applicata anche alle istanze prive di rumore: la tolleranza è stata calcolata come se fosse presente rumore, mantenendo omogenee le condizioni di arresto tra gli esperimenti.
+\end{itemize}
+
+\subsection{Numero di Iterazioni}
+
+
+\subsection{Valori Funzione Obiettivo e Norme del Gradiente}
+
+
+\subsection{Tempi di Esecuzione}
