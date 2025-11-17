@@ -35,12 +35,28 @@ if __name__ == "__main__":
                'scipy_bfgs_with_noisy_function'
                ]
     
-    # test.run_and_show_result(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000)
-    # time_summary = test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
-    iteration_summary = test.repeat_iterations(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
-    
-    # test.run_and_show_result(problem_name='BRKMCC', methods=methods, eps_f=1e-7, eps_g=1e-7, tol_factor=10, max_iter=10000)
+    # test.run_and_show_result(problem_name='ALLINITU', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000)
+    test.repeat_iterations(problem_name='ALLINITU', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
+    # test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=False)
 
-    # test.run_and_show_result(problem_name='BROYDN7D', methods=methods, eps_f=1e-5, eps_g=1e-5, tol_factor=10, max_iter=10000, sif_params={'N/2': 25})
+    # test.run_and_show_result(problem_name='ARWHEAD', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, sif_params={'N': 100})
+    # test.repeat_iterations(problem_name='ARWHEAD', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 100})
+    # test.repeat_timing(problem_name='ARWHEAD', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 100})
+    
+    # test.run_and_show_result(problem_name='BOX', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, sif_params={'N': 10})
+    # test.repeat_iterations(problem_name='BOX', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
+    # test.repeat_timing(problem_name='BOX', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
+    
+    # test.run_and_show_result(problem_name='BOXPOWER', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, sif_params={'N': 10})
+    # test.repeat_iterations(problem_name='BOXPOWER', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
+    # test.repeat_timing(problem_name='BOXPOWER', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
+
+    # test.run_and_show_result(problem_name='BRKMCC', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000)
+    # test.repeat_iterations(problem_name='BRKMCC', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
+    # test.repeat_timing(problem_name='BRKMCC', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
+
+    # test.run_and_show_result(problem_name='BROYDN7D', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, sif_params={'N/2': 25})
+    # test.repeat_iterations(problem_name='BROYDN7D', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N/2': 25})
+    # test.repeat_timing(problem_name='BROYDN7D', methods=methods, eps_f=1e-5, eps_g=1e-3, tol_factor=10, max_iter=10000, n_runs=50, quiet=True, sif_params={'N/2': 25})
 
     

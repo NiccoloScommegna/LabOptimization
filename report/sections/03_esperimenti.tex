@@ -14,9 +14,29 @@ Prima di passare ai risultati, viene fornita una breve panoramica dei dettagli t
 \end{itemize}
 
 \subsection{Numero di Iterazioni}
+\begin{sidewaystable}
+    \footnotesize
+    \caption{Numero di iterazioni per la convergenza dei diversi metodi sui problemi di benchmark, sia in assenza che in presenza di rumore.}\label{tab:iterazioni}
+    \centering
+    \begin{tabular}{lccccccc}
+    \toprule
+    \multirow{2}{*}{\textbf{Problema}} & \textbf{GD} & \textbf{GD} & \textbf{BFGS} & \textbf{BFGS} & \textbf{SciPy BFGS} & \textbf{SciPy BFGS} & \textbf{BFGS Tollerante} \\
+                                       & (no rumore) & (con rumore) & (no rumore) & (con rumore) & (no rumore) & (con rumore) & (con rumore) \\
+    \midrule
+    ALLINITU & X & Y & Z & A & B & C & D \\
+    ARWHEAD  & X & Y & Z & A & B & C & D \\
+    BOX      & X & Y & Z & A & B & C & D \\
+    BOXPOWER & X & Y & Z & A & B & C & D \\
+    BRKMCC   & X & Y & Z & A & B & C & D \\
+    BROYDN7D & X & Y & Z & A & B & C & D \\
+    \bottomrule
+    \end{tabular}
+    
+\end{sidewaystable}
+    
 
 
-\subsection{Valori Funzione Obiettivo e Norme del Gradiente}
+\subsection{Andamento Funzione Obiettivo e Norme del Gradiente}
 
 
 \subsection{Tempi di Esecuzione}
