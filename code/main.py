@@ -26,8 +26,8 @@ if __name__ == "__main__":
 
 
     
-    methods = [# 'gd_armijo_with_base_function', 
-               # 'gd_armijo_with_noisy_function', 
+    methods = ['gd_armijo_with_base_function', 
+               'gd_armijo_with_noisy_function', 
                'bfgs_with_base_function', 
                'bfgs_with_noisy_function', 
                'bfgs_noisy_with_noisy_function',
@@ -35,8 +35,9 @@ if __name__ == "__main__":
                'scipy_bfgs_with_noisy_function'
                ]
     
-    test.run_and_show_result(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000)
-    summary = test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
+    # test.run_and_show_result(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000)
+    # time_summary = test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
+    iteration_summary = test.repeat_iterations(problem_name='ALLINITU', methods=methods, eps_f=1e-4, eps_g=1e-4, tol_factor=10, max_iter=10000, n_runs=50, quiet=True)
     
     # test.run_and_show_result(problem_name='BRKMCC', methods=methods, eps_f=1e-7, eps_g=1e-7, tol_factor=10, max_iter=10000)
 

@@ -144,8 +144,8 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             print(f"Tolleranza usata: {tol}")
             start = time.perf_counter()
             xmin, out = optim_utils.gradient_descent_armijo(f=f, g=g, x0=x0, 
-                                                                 tol=tol, maxiter=max_iter, 
-                                                                 eps_f=eps_f, eps_g=eps_g, rng=rng
+                                                            tol=tol, maxiter=max_iter, 
+                                                            eps_f=eps_f, eps_g=eps_g, rng=rng
                                                                  )
             
             elapsed = time.perf_counter() - start
@@ -523,6 +523,122 @@ def repeat_timing(problem_name: str,
             'times': [float(t) for t in times],
             'mean': mean_t,
             'std': std_t,
+            'success_count': success_count,
+        }
+
+    return results_summary
+
+
+def repeat_iterations(problem_name: str,
+                      methods: List[str],
+                      n_runs: int = 5,
+                      eps_f: float = 1e-7,
+                      eps_g: float = 1e-7,
+                      seed: int = 42,
+                      tol_factor: float = 10.0,
+                      max_iter: int = 10000,
+                      sif_params: Optional[Dict] = None,
+                      quiet: bool = False) -> Dict[str, Dict]:
+    """
+    Esegue `n_runs` volte ogni metodo su `problem_name`, raccoglie il numero di
+    iterazioni (n_iter) e stampa la media (e deviazione standard) del numero
+    di iterazioni per metodo.
+
+    Parametri: uguali a repeat_timing(...).
+    Ritorna: dict mapping method -> {
+        'n_iters': [v1, v2, ...],      # lista (float) o None per ogni run
+        'mean': mean_n_iter (float or nan),
+        'std': std_n_iter (float or nan),
+        'valid_count': numero_valori_validi (int),
+        'success_count': number_of_successful_runs (int)
+    }
+    """
+
+    if n_runs < 1:
+        raise ValueError("n_runs deve essere >= 1")
+
+    rng_master = np.random.default_rng(seed)
+    results_summary: Dict[str, Dict] = {}
+
+    try:
+        p = import_problem(problem_name, sif_params=sif_params)
+    except Exception as e:
+        print(f"Impossibile importare problema {problem_name}: {e}")
+        return {}
+
+    print(f"Ripetizione iterazioni: problema={problem_name}, runs per metodo={n_runs}")
+    print(f"Metodi: {methods}")
+    print("-----------------------------------------------------------")
+
+    for method in methods:
+        n_iters = []
+        success_count = 0
+
+        for run_idx in range(n_runs):
+            seed_run = rng_master.integers(1 << 30)
+            subrng = np.random.default_rng(seed_run)
+
+            if quiet:
+                fnull = io.StringIO()
+                ctx = contextlib.redirect_stdout(fnull)
+            else:
+                ctx = contextlib.nullcontext()
+
+            with ctx:
+                # esegui la prova
+                res = run_method_on_problem(p, method=method, eps_f=eps_f, eps_g=eps_g,
+                                            rng=subrng, tol_factor=tol_factor, max_iter=max_iter)
+
+            # Estrazione del valore di n_iter (preferenze: 'n_iter' -> 'nit' -> fallback su f_history)
+            n_val = None
+            try:
+                if isinstance(res, dict):
+                    if 'n_iter' in res and res['n_iter'] is not None:
+                        n_val = float(res['n_iter'])
+                    elif 'nit' in res and res['nit'] is not None:
+                        n_val = float(res['nit'])
+                    elif 'f_history' in res and isinstance(res['f_history'], list) and len(res['f_history']) > 0:
+                        # assumiamo che f_history contenga valori ad ogni iterazione e che
+                        # la prima voce sia f(x0) -> numero di iterazioni = len-1
+                        n_val = float(max(0, len(res['f_history']) - 1))
+            except Exception:
+                n_val = None
+
+            n_iters.append(n_val)
+            if res.get('status') == 'success':
+                success_count += 1
+
+            if not quiet:
+                n_str = f"{n_val:.0f}" if (n_val is not None and not np.isnan(n_val)) else "N/A"
+                print(f"[{method}] run {run_idx+1}/{n_runs}: n_iter={n_str}, status={res.get('status')}")
+
+        # statistiche: consideriamo solo i valori numerici validi (non None, non NaN)
+        valid_vals = [float(v) for v in n_iters if v is not None and not (isinstance(v, float) and np.isnan(v))]
+        valid_count = len(valid_vals)
+
+        if valid_count > 0:
+            vals_arr = np.asarray(valid_vals, dtype=float)
+            mean_n = float(np.mean(vals_arr))
+            std_n = float(np.std(vals_arr, ddof=0))
+        else:
+            mean_n = float('nan')
+            std_n = float('nan')
+
+        print("-----------------------------------------------------------")
+        print(f"Metodo: {method}")
+        print(f"  runs = {n_runs}, success = {success_count}, valid_n = {valid_count}")
+        if valid_count > 0:
+            print(f"  iterazioni: mean = {mean_n:.3f}, std = {std_n:.3f}")
+            print(f"  singoli n_iter: {[int(v) if v is not None else 'N/A' for v in n_iters]}")
+        else:
+            print("  Nessun valore valido di n_iter raccolto.")
+        print("-----------------------------------------------------------")
+
+        results_summary[method] = {
+            'n_iters': [float(v) if (v is not None and not (isinstance(v, float) and np.isnan(v))) else None for v in n_iters],
+            'mean': mean_n,
+            'std': std_n,
+            'valid_count': valid_count,
             'success_count': success_count,
         }
 
