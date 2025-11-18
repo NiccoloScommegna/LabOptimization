@@ -381,6 +381,11 @@ def run_and_show_result(problem_name: str, methods: List[str], eps_f: float = 1e
         if res.get('status') == 'success':
             print(f"Punto minimo trovato (x): {res.get('x_min')}")
             print(f"Valore funzione: {res.get('f_val')}")
+            print(f"Valore ultimo gradiente registrato: {res.get('grad_norms')[-1] if res.get('grad_norms') else 'N/A'}")
+            if res.get('grad_norms')[-1] <= res.get('tol', float('inf')):
+                print("Condizione di arresto sul gradiente soddisfatta.")
+            else:
+                print("Condizione di arresto sul gradiente NON soddisfatta.")
             print(f"Numero iterazioni: {res.get('n_iter')}")
             print(f"Tempo impiegato: {res.get('elapsed'):.6f} s")
         else:
@@ -410,7 +415,7 @@ def run_and_show_result(problem_name: str, methods: List[str], eps_f: float = 1e
     if all_empty_f:
         print("Attenzione: nessuna storia dei valori della funzione disponibile per i metodi eseguiti. Niente da plottare.")
     else:
-        plotting.plot_function_histories(f_histories, method_labels, problem_name=prob_id)
+        plotting.plot_function_histories(f_histories, method_labels, problem_name=prob_id, logy=True)
 
     # Disegna il grafico con le storie delle norme del gradiente per i metodi eseguiti sul problema
     all_empty_grad = all(len(h) == 0 for h in grad_norms_histories)
@@ -469,6 +474,7 @@ def repeat_timing(problem_name: str,
     for method in methods:
         times = []
         success_count = 0
+        conv_count = 0  # numero di run che hanno soddisfatto la condizione di arresto sul gradiente
 
         for run_idx in range(n_runs):
             # generiamo un sub-seed per ogni run per garantire indipendenza e riproducibilità
@@ -503,9 +509,47 @@ def repeat_timing(problem_name: str,
             if res.get('status') == 'success':
                 success_count += 1
 
+            # controllo sulla condizione di convergenza sul gradiente (ultimo valore)
+            last_grad = None
+            tol_val = None
+            try:
+                # estrai grad_norms in modo robusto (supporta list, np.ndarray, ecc.)
+                gnorms = res.get('grad_norms', None) if isinstance(res, dict) else None
+                if gnorms is not None:
+                    # converto in array per estrarre l'ultimo elemento in modo sicuro
+                    arr = np.asarray(gnorms, dtype=float)
+                    if arr.size > 0:
+                        last_grad = float(arr[-1])
+                # leggo la tolleranza
+                tol_raw = res.get('tol', None) if isinstance(res, dict) else None
+                if tol_raw is not None:
+                    tol_val = float(tol_raw)
+            except Exception:
+                last_grad = None
+                tol_val = None
+
+            # decide se la condizione è soddisfatta
+            conv_flag = None  # True/False/None (None = non valutabile)
+            if (last_grad is not None) and (tol_val is not None) and (not np.isnan(last_grad)) and (not np.isnan(tol_val)):
+                if last_grad <= tol_val:
+                    conv_flag = True
+                    conv_count += 1
+                else:
+                    conv_flag = False
+            else:
+                conv_flag = None
+
             # breve log per run (se non quiet)
             if not quiet:
                 print(f"[{method}] run {run_idx+1}/{n_runs}: time={t_measured:.6f}s, status={res.get('status')}")
+                if conv_flag is True:
+                    print("  Condizione di arresto sul gradiente soddisfatta.")
+                    print(f"  ultimo ||grad|| = {last_grad:.6g} <= tol ({tol_val:.6g})")
+                elif conv_flag is False:
+                    print("  Condizione di arresto sul gradiente NON soddisfatta.")
+                    print(f"  ultimo ||grad|| = {last_grad:.6g} > tol ({tol_val:.6g})")
+                else:
+                    print("  Condizione di arresto sul gradiente non valutabile (grad_norms o tol mancanti).")
 
         times_arr = np.asarray(times, dtype=float)
         mean_t = float(np.mean(times_arr)) if times_arr.size > 0 else float('nan')
@@ -514,7 +558,7 @@ def repeat_timing(problem_name: str,
         # stampa riepilogo per metodo
         print("-----------------------------------------------------------")
         print(f"Metodo: {method}")
-        print(f"  runs = {n_runs}, success = {success_count}")
+        print(f"  runs = {n_runs}, success = {success_count}, conv_count = {conv_count}")
         print(f"  tempi (s): mean = {mean_t:.6f}, std = {std_t:.6f}")
         print(f"  singoli tempi: {[f'{t:.6f}' for t in times]}")
         print("-----------------------------------------------------------")
@@ -524,6 +568,7 @@ def repeat_timing(problem_name: str,
             'mean': mean_t,
             'std': std_t,
             'success_count': success_count,
+            'conv_count': conv_count,
         }
 
     return results_summary
@@ -543,14 +588,6 @@ def repeat_iterations(problem_name: str,
     Esegue `n_runs` volte ogni metodo su `problem_name`, raccoglie il numero di
     iterazioni (n_iter) e stampa la media (e deviazione standard) del numero
     di iterazioni per metodo.
-
-    Parametri: uguali a repeat_timing(...).
-    Ritorna: dict mapping method -> {
-        'n_iters': [v1, v2, ...],      # lista (float) o None per ogni run
-        'mean': mean_n_iter (float or nan),
-        'std': std_n_iter (float or nan),
-        'valid_count': numero_valori_validi (int),
-        'success_count': number_of_successful_runs (int)
     }
     """
 
@@ -573,6 +610,7 @@ def repeat_iterations(problem_name: str,
     for method in methods:
         n_iters = []
         success_count = 0
+        conv_count = 0  # numero di run che hanno soddisfatto la condizione di arresto sul gradiente
 
         for run_idx in range(n_runs):
             seed_run = rng_master.integers(1 << 30)
@@ -608,9 +646,47 @@ def repeat_iterations(problem_name: str,
             if res.get('status') == 'success':
                 success_count += 1
 
+            # controllo sulla condizione di convergenza sul gradiente (ultimo valore)
+            last_grad = None
+            tol_val = None
+            try:
+                # estrai grad_norms in modo robusto (supporta list, np.ndarray, ecc.)
+                gnorms = res.get('grad_norms', None) if isinstance(res, dict) else None
+                if gnorms is not None:
+                    # converto in array per estrarre l'ultimo elemento in modo sicuro
+                    arr = np.asarray(gnorms, dtype=float)
+                    if arr.size > 0:
+                        last_grad = float(arr[-1])
+                # leggo la tolleranza
+                tol_raw = res.get('tol', None) if isinstance(res, dict) else None
+                if tol_raw is not None:
+                    tol_val = float(tol_raw)
+            except Exception:
+                last_grad = None
+                tol_val = None
+
+            # decide se la condizione è soddisfatta
+            conv_flag = None  # True/False/None (None = non valutabile)
+            if (last_grad is not None) and (tol_val is not None) and (not np.isnan(last_grad)) and (not np.isnan(tol_val)):
+                if last_grad <= tol_val:
+                    conv_flag = True
+                    conv_count += 1
+                else:
+                    conv_flag = False
+            else:
+                conv_flag = None
+
             if not quiet:
                 n_str = f"{n_val:.0f}" if (n_val is not None and not np.isnan(n_val)) else "N/A"
                 print(f"[{method}] run {run_idx+1}/{n_runs}: n_iter={n_str}, status={res.get('status')}")
+                if conv_flag is True:
+                    print("  Condizione di arresto sul gradiente soddisfatta.")
+                    print(f"  ultimo ||grad|| = {last_grad:.6g} <= tol ({tol_val:.6g})")
+                elif conv_flag is False:
+                    print("  Condizione di arresto sul gradiente NON soddisfatta.")
+                    print(f"  ultimo ||grad|| = {last_grad:.6g} > tol ({tol_val:.6g})")
+                else:
+                    print("  Condizione di arresto sul gradiente non valutabile (grad_norms o tol mancanti).")
 
         # statistiche: consideriamo solo i valori numerici validi (non None, non NaN)
         valid_vals = [float(v) for v in n_iters if v is not None and not (isinstance(v, float) and np.isnan(v))]
@@ -626,7 +702,7 @@ def repeat_iterations(problem_name: str,
 
         print("-----------------------------------------------------------")
         print(f"Metodo: {method}")
-        print(f"  runs = {n_runs}, success = {success_count}, valid_n = {valid_count}")
+        print(f"  runs = {n_runs}, success = {success_count}, valid_n = {valid_count}, conv_count = {conv_count}")
         if valid_count > 0:
             print(f"  iterazioni: mean = {mean_n:.3f}, std = {std_n:.3f}")
             print(f"  singoli n_iter: {[int(v) if v is not None else 'N/A' for v in n_iters]}")
@@ -640,6 +716,7 @@ def repeat_iterations(problem_name: str,
             'std': std_n,
             'valid_count': valid_count,
             'success_count': success_count,
+            'conv_count': conv_count,
         }
 
     return results_summary

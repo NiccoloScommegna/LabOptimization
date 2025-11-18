@@ -384,10 +384,11 @@ def bfgs_strong_wolfe(f: Callable[[np.ndarray], float],
         sy = float(np.dot(sk, yk))
         Bs = Bk @ sk
         sBs = float(np.dot(sk, Bs))
-        if sy <= 1e-12 or sBs <= 1e-12:
-            # evita divisioni per zero o valori non curvati
-            info['status'] = 'curvature_condition_failed'
-            break
+        # if sy <= 1e-30 or sBs <= 1e-30:
+        #     # evita divisioni per zero o valori non curvati
+        #     info['status'] = 'curvature_condition_failed'
+        #     print(f"Warning: curvature condition failed at iteration {k}. sy={sy}, sBs={sBs}")
+        #     break
 
         term1 = np.outer(yk, yk) / sy
         term2 = np.outer(Bs, Bs) / sBs
@@ -874,10 +875,11 @@ def bfgs_strong_wolfe_noise_tolerant(f: Callable[[np.ndarray], float],
         sy = float(np.dot(sk, yk))
         Bs = Bk @ sk
         sBs = float(np.dot(sk, Bs))
-        if sy <= 1e-12 or sBs <= 1e-12:
-            # evita divisioni per zero o valori non curvati
-            info['status'] = 'curvature_condition_failed'
-            break
+        # if sy <= 1e-30 or sBs <= 1e-30:
+        #     # evita divisioni per zero o valori non curvati
+        #     info['status'] = 'curvature_condition_failed'
+        #     print(f"Warning: curvature condition failed at iteration {k}. sy={sy}, sBs={sBs}")
+        #     break
 
         term1 = np.outer(yk, yk) / sy
         term2 = np.outer(Bs, Bs) / sBs
