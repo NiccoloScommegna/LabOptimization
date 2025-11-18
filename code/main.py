@@ -34,16 +34,16 @@ if __name__ == "__main__":
                ]
     
     # Rumore piccolo
-    # eps_f = 1e-8
-    # eps_g = 1e-8
+    eps_f = 1e-8
+    eps_g = 1e-8
 
     # Rumore grande
-    eps_f = 1e-5
-    eps_g = 1e-5
+    # eps_f = 1e-5
+    # eps_g = 1e-5
 
     
     # test.run_and_show_result(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000)
-    test.repeat_iterations(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
+    # test.repeat_iterations(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
     # test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=False)
     
     # test.run_and_show_result(problem_name='BOX', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, sif_params={'N': 10})
@@ -63,17 +63,5 @@ if __name__ == "__main__":
     # test.repeat_timing(problem_name='BROYDN7D', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N/2': 25})
 
     # test.run_and_show_result(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000)
-    # test.repeat_iterations(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=5, quiet=True)
+    test.repeat_iterations(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
     # test.repeat_timing(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
-
-    
-    
-    
-    
-    # problems = test.list_suitable_problems(15)
-    # print("Problemi adatti per i test:", problems)
-    # for problem_name in problems:
-    #     print(f"Properties of {problem_name}: {pycutest.problem_properties(problem_name)}")
-
-    # pycutest.print_available_sif_params('COSINE')
-    # pycutest.print_available_sif_params('CRAGGLVY')

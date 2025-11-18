@@ -15,40 +15,43 @@ Prima di passare ai risultati, viene fornita una breve panoramica dei dettagli t
 
 \subsection{Numero di Iterazioni}
 \begin{sidewaystable}
-    \footnotesize
+    \scriptsize
     \caption{Numero di iterazioni medie per la convergenza dei diversi metodi sui problemi scelti, sia in assenza che in presenza di rumore. Numero di esecuzioni: 50; Rumore sulla valutazione della funzione obiettivo e del gradiente: \(10^{-8}\). La dicitura NO CONV sta per \emph{Non Convergente}.}\label{tab:iterazioni_rumore_piccolo}
     \centering
-    \begin{tabular}{lccccccc}
+    \begin{tabular}{lcccccccccccccc}
     \toprule
-    \multirow{2}{*}{\textbf{Problema}} & \textbf{GD} & \textbf{GD} & \textbf{BFGS} & \textbf{BFGS} & \textbf{BFGS Tollerante} & \textbf{SciPy BFGS} & \textbf{SciPy BFGS} \\
-                                       & (no rumore) & (con rumore) & (no rumore) & (con rumore) & (con rumore) & (no rumore) & (con rumore) \\
+    \multirow{2}{*}{\textbf{Problema}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS Tollerante}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} \\
+                                       & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} \\
+     & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
     \midrule
-    ALLINITU & 312.000 & NO CONV & 24.000  & 24.100  & 12.080 & 10.000 & 12.000 \\
-    ARWHEAD  & NO CONV & NO CONV & 25.000  & 25.000  & 19.720 & 6.000  & 6.800 \\
-    BOX      & 78.000  & NO CONV & 20.000  & 20.860  & 13.720 & 5.000  & 5.640 \\
-    BOXPOWER & NO CONV & NO CONV & 66.000  & 52.860  & 45.020 & 9.000  & 9.000 \\
-    BRKMCC   & 218.000 & NO CONV & 21.000  & 21.340  & 7.880  & 4.000  & 4.100 \\
-    BROYDN7D & NO CONV & NO CONV & 110.000 & 108.220 & 98.180 & 73.000 & 71.960 \\
+    ALLINITU & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BOX      & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BOXPOWER & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BRKMCC   & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BROYDN7D & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    DENSCHNA & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
     \bottomrule
     \end{tabular}
     
 \end{sidewaystable}
 
 \begin{sidewaystable}
-    \footnotesize
+    \scriptsize
     \caption{Numero di iterazioni medie per la convergenza dei diversi metodi sui problemi scelti, sia in assenza che in presenza di rumore. Numero di esecuzioni: 50; Rumore sulla valutazione della funzione obiettivo e del gradiente: \(10^{-5}\). La dicitura NO CONV sta per \emph{Non Convergente}.}\label{tab:iterazioni_rumore_grande}
     \centering
-    \begin{tabular}{lccccccc}
+    \begin{tabular}{lcccccccccccccc}
     \toprule
-    \multirow{2}{*}{\textbf{Problema}} & \textbf{GD} & \textbf{GD} & \textbf{BFGS} & \textbf{BFGS} & \textbf{BFGS Tollerante} & \textbf{SciPy BFGS} & \textbf{SciPy BFGS} \\
-                                       & (no rumore) & (con rumore) & (no rumore) & (con rumore) & (con rumore) & (no rumore) & (con rumore) \\
+    \multirow{2}{*}{\textbf{Problema}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS Tollerante}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} \\
+                                       & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} \\
+     & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
     \midrule
-    ALLINITU & X & Y & Z & A & B & C & D \\
-    ARWHEAD  & X & Y & Z & A & B & C & D \\
-    BOX      & X & Y & Z & A & B & C & D \\
-    BOXPOWER & X & Y & Z & A & B & C & D \\
-    BRKMCC   & X & Y & Z & A & B & C & D \\
-    BROYDN7D & X & Y & Z & A & B & C & D \\
+    ALLINITU & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BOX      & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BOXPOWER & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BRKMCC   & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    BROYDN7D & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    DENSCHNA & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    \bottomrule
     \end{tabular}
     
 \end{sidewaystable}

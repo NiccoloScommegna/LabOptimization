@@ -276,7 +276,7 @@ def run_method_on_problem(p, method: str, eps_f: float, eps_g: float, rng: np.ra
             # opzioni: maxiter come da input
             start = time.perf_counter()
             res = minimize(fun=f_wrapper, x0=x0, jac=g_wrapper, method='BFGS',
-                           callback=cb, options={'maxiter': max_iter, 'disp': False})
+                           callback=cb, options={'maxiter': max_iter, 'disp': False, 'gtol': tol})
             elapsed = time.perf_counter() - start
 
             # estrai informazioni
