@@ -16,41 +16,42 @@ Prima di passare ai risultati, viene fornita una breve panoramica dei dettagli t
 \subsection{Numero di Iterazioni}
 \begin{sidewaystable}
     \scriptsize
-    \caption{Numero di iterazioni medie per la convergenza dei diversi metodi sui problemi scelti, sia in assenza che in presenza di rumore. Numero di esecuzioni: 50; Rumore sulla valutazione della funzione obiettivo e del gradiente: \(10^{-8}\). La dicitura NO CONV sta per \emph{Non Convergente}.}\label{tab:iterazioni_rumore_piccolo}
+    \caption{Numero medio di iterazioni impiegate dai diversi metodi, sia in assenza che in presenza di rumore di piccola entità (\(10^{-8}\)), per ogni problema del benchmark. La tabella riporta anche il numero di esecuzioni che hanno effettivamente raggiunto la convergenza, per ciascuna configurazione sono state eseguite 50 prove.}\label{tab:iterazioni_rumore_piccolo}
     \centering
     \begin{tabular}{lcccccccccccccc}
     \toprule
     \multirow{2}{*}{\textbf{Problema}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS Tollerante}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} \\
                                        & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} \\
-     & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
+                                       & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
     \midrule
-    ALLINITU & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BOX      & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BOXPOWER & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BRKMCC   & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BROYDN7D & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    DENSCHNA & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    ALLINITU & 312.000   & 50 & 4916.040  & 31 & 33.000  & 50 & 64.840   & 50 & 19.520  & 50 & 12.000 & 50 & 12.800 & 1 \\
+    BOX      & 78.000    & 50 & 10000.000 & 0  & 28.000  & 50 & 39.920   & 48 & 36.440  & 50 & 5.000  & 0  & 5.900  & 0 \\
+    BOXPOWER & 10000.000 & 0  & 10000.000 & 0  & 80.000  & 50 & 1782.286 & 45 & 373.420 & 49 & 44.000 & 0  & 10.460 & 0 \\
+    BRKMCC   & 218.000   & 50 & 10000.000 & 0  & 32.000  & 50 & 35.820   & 44 & 11.060  & 50 & 5.000  & 50 & 5.060  & 7 \\
+    BROYDN7D & 10000.000 & 0  & 10000.000 & 0  & 122.000 & 50 & 171.880  & 49 & 194.660 & 50 & 77.000 & 0  & 71.200 & 0 \\
+    DENSCHNA & 51.000    & 50 & 9688.100  & 2  & 30.000  & 50 & 34.360   & 50 & 13.060  & 50 & 11.000 & 50 & 9.860  & 0 \\
     \bottomrule
     \end{tabular}
     
 \end{sidewaystable}
+Per ogni problema scelto dal benchmark, la Tabella~\ref{tab:iterazioni_rumore_piccolo} riporta il numero medio di iterazioni necessarie per la convergenza dei diversi metodi, sia in assenza che in presenza di rumore di piccola entità (livello di rumore \(10^{-8}\)). La tabella include anche il numero di esecuzioni che hanno effettivamente raggiunto la convergenza, evidenziando eventuali difficoltà incontrate dai metodi in condizioni rumorose. Il numero di esecuzioni per ogni configurazione è stato fissato a 50.
 
 \begin{sidewaystable}
     \scriptsize
-    \caption{Numero di iterazioni medie per la convergenza dei diversi metodi sui problemi scelti, sia in assenza che in presenza di rumore. Numero di esecuzioni: 50; Rumore sulla valutazione della funzione obiettivo e del gradiente: \(10^{-5}\). La dicitura NO CONV sta per \emph{Non Convergente}.}\label{tab:iterazioni_rumore_grande}
+    \caption{Numero medio di iterazioni impiegate dai diversi metodi, sia in assenza che in presenza di rumore di grande entità (\(10^{-5}\)), per ogni problema del benchmark. La tabella riporta anche il numero di esecuzioni che hanno effettivamente raggiunto la convergenza, per ciascuna configurazione sono state eseguite 50 prove.}\label{tab:iterazioni_rumore_grande}
     \centering
     \begin{tabular}{lcccccccccccccc}
     \toprule
     \multirow{2}{*}{\textbf{Problema}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS Tollerante}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} \\
                                        & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} \\
-     & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
+                                       & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
     \midrule
-    ALLINITU & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BOX      & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BOXPOWER & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BRKMCC   & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    BROYDN7D & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
-    DENSCHNA & X & Y &  Z & A & B & C & D & E & F & G & H & I & L & M \\
+    ALLINITU & 226.000   & 50 & 427.960   & 31 & 22.000  & 50 & 26.400   & 50 & 15.940  & 50 & 10.000 & 50 & 11.620 & 5 \\
+    BOX      & 45.000    & 50 & 10000.000 & 0  & 19.000  & 50 & 26.120   & 50 & 34.920  & 50 & 5.000  & 50 & 5.240  & 0 \\
+    BOXPOWER & 10000.000 & 0  & 10000.000 & 0  & 49.000  & 50 & 2498.755 & 39 & 666.380 & 47 & 9.000  & 50 & 9.760  & 0 \\
+    BRKMCC   & 140.000   & 50 & 9719.800  & 1  & 21.000  & 50 & 25.880   & 48 & 12.660  & 50 & 4.000  & 50 & 3.820  & 9 \\
+    BROYDN7D & 139.000   & 50 & 10000.000 & 0  & 104.000 & 50 & 137.000  & 50 & 179.940 & 50 & 71.000 & 0  & 68.000 & 0 \\
+    DENSCHNA & 31.000    & 50 & 2982.200  & 40 & 20.000  & 50 & 24.480   & 50 & 11.280  & 50 & 9.000  & 50 & 8.200  & 4 \\
     \bottomrule
     \end{tabular}
     
