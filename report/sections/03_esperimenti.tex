@@ -21,7 +21,7 @@ Prima di passare ai risultati, viene fornita una breve panoramica dei dettagli t
     \begin{tabular}{lcccccccccccccc}
     \toprule
     \multirow{2}{*}{\textbf{Problema}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS Tollerante}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} \\
-                                       & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} \\[1ex]
+                                       & \multicolumn{2}{c}{\textbf{no rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} & \multicolumn{2}{c}{\textbf{no rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} & \multicolumn{2}{c}{\textbf{no rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} \\[1ex]
                                        & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
     \midrule
     ALLINITU & 312.000   & 50 & 4916.040  & 31 & 33.000  & 50 & 64.840   & 50 & 19.520  & 50 & 12.000 & 50 & 12.800 & 1 \\[1ex]
@@ -34,7 +34,7 @@ Prima di passare ai risultati, viene fornita una breve panoramica dei dettagli t
     \end{tabular}
     
 \end{sidewaystable}
-Per ogni problema scelto dal benchmark, la Tabella~\ref{tab:iterazioni_rumore_piccolo} riporta il numero medio di iterazioni impiegate dai diversi metodi, sia in assenza che in presenza di rumore di piccola entità (livello di rumore \(10^{-8}\)). La tabella include anche il numero di esecuzioni che hanno effettivamente raggiunto la convergenza. Il numero di esecuzioni per ogni configurazione è stato fissato a 50. La Tabella~\ref{tab:iterazioni_rumore_grande} mostra invece i risultati ottenuti con un rumore di grande entità (livello di rumore \(10^{-5}\)).
+Per ogni problema scelto, la Tabella~\ref{tab:iterazioni_rumore_piccolo} riporta il numero medio di iterazioni impiegate dai diversi metodi, sia in assenza che in presenza di rumore di piccola entità (livello di rumore \(10^{-8}\)). La tabella include anche il numero di esecuzioni che hanno effettivamente raggiunto la convergenza. Il numero di esecuzioni per ogni configurazione è stato fissato a 50. La Tabella~\ref{tab:iterazioni_rumore_grande} mostra invece i risultati ottenuti con un rumore di grande entità (livello di rumore \(10^{-5}\)).
 
 I metodi BFGS (sia il classico che la variante tollerante al rumore, oltre alla versione di SciPy) richiedono, come previsto, molte meno iterazioni rispetto al metodo di discesa del gradiente, sia nei test senza rumore sia in quelli rumorosi. L’introduzione del rumore però peggiora le prestazioni complessive: aumenta il numero medio di iterazioni e diminuisce la percentuale di esecuzioni che raggiungono la convergenza.
 
@@ -51,7 +51,7 @@ Infine, dall’analisi delle due tabelle emerge che un aumento del livello di ru
     \begin{tabular}{lcccccccccccccc}
     \toprule
     \multirow{2}{*}{\textbf{Problema}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{GD}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS}} & \multicolumn{2}{c}{\textbf{BFGS Tollerante}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} & \multicolumn{2}{c}{\textbf{SciPy BFGS}} \\
-                                       & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(con rumore)} & \multicolumn{2}{c}{(no rumore)} & \multicolumn{2}{c}{(con rumore)} \\
+                                       & \multicolumn{2}{c}{\textbf{no rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} & \multicolumn{2}{c}{\textbf{no rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} & \multicolumn{2}{c}{\textbf{no rumore}} & \multicolumn{2}{c}{\textbf{con rumore}} \\
                                        & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti & media & convergeti \\
     \midrule
     ALLINITU & 226.000   & 50 & 427.960   & 31 & 22.000  & 50 & 26.400   & 50 & 15.940  & 50 & 10.000 & 50 & 11.620 & 5 \\[1ex]
@@ -67,7 +67,34 @@ Infine, dall’analisi delle due tabelle emerge che un aumento del livello di ru
     
 \newpage
 \subsection{Tempi di Esecuzione}
+\begin{sidewaystable}
+    \scriptsize
+    \caption{Tempo medio di esecuzione impiegato dai diversi metodi, sia in assenza che in presenza di rumore di grande entità (\(10^{-5}\)), per ogni problema del benchmark. Per ciascuna configurazione sono state eseguite 50 prove.}\label{tab:tempi_rumore_grande}
+    \centering
+    \begin{tabular}{lccccccc}
+    \toprule
+    \multirow{2}{*}{\textbf{Problema}} & \textbf{GD} & \textbf{GD} & \textbf{BFGS} & \textbf{BFGS} & \textbf{BFGS Tollerante} & \textbf{SciPy BFGS} & \textbf{SciPy BFGS} \\
+                                       & \textbf{no rumore} & \textbf{con rumore} & \textbf{no rumore} & \textbf{con rumore} & \textbf{con rumore} & \textbf{no rumore} & \textbf{con rumore} \\
+                                       & (s) & (s) & (s) & (s) & (s) & (s) & (s) \\
+    \midrule
+    ALLINITU & 0.014334 & 0.055300 & 0.002479 & 0.005629 & 0.003128 & 0.001765 & 0.003193 \\[1ex]
+    BOX      & 0.003497 & 1.454260 & 0.002387 & 0.005152 & 0.065018 & 0.001160 & 0.002859 \\[1ex]
+    BOXPOWER & 0.620002 & 1.360134 & 0.004735 & 0.659949 & 0.336490 & 0.001662 & 0.003148 \\[1ex]
+    BRKMCC   & 0.010843 & 1.365621 & 0.002181 & 0.006079 & 0.002479 & 0.000852 & 0.001918 \\[1ex]
+    BROYDN7D & 0.016969 & 2.170940 & 0.027265 & 0.059845 & 0.138338 & 0.014043 & 0.016338 \\[1ex]
+    DENSCHNA & 0.001707 & 0.357335 & 0.001968 & 0.004736 & 0.001927 & 0.001298 & 0.002671 \\
+    \bottomrule
+    \end{tabular}
+    
+\end{sidewaystable}
+Per ciascun problema, la Tabella~\ref{tab:tempi_rumore_grande} riporta il tempo medio di esecuzione dei diversi metodi, sia in assenza di rumore sia con un rumore di elevata entità (livello \(10^{-5}\)). Per ogni configurazione sono state eseguite 50 repliche. Nell’analisi dei tempi abbiamo scelto di riportare solo i risultati relativi al rumore elevato, poiché i risultati ottenuti con rumore di entità minore mostrano tendenze analoghe; inoltre non riportiamo qui il numero di esecuzioni convergenti perché risulterebbe ridondante rispetto a quanto già esposto nella sezione precedente.
 
+I tempi di esecuzione seguono una tendenza simile a quella osservata per il numero di iterazioni: i metodi BFGS (classico, tollerante al rumore e la versione di SciPy) sono, in generale, più rapidi del metodo di discesa del gradiente sia sui problemi non rumorosi sia su quelli rumorosi. In pochi casi i tempi del gradiente risultano paragonabili — o addirittura inferiori — a quelli dei metodi BFGS (soprattutto quando questi ultimi sono eseguiti su problemi rumorosi): ciò dipende dal fatto che la discesa del gradiente, pur richiedendo più iterazioni, ha un costo per iterazione molto inferiore rispetto ai metodi quasi-Newton, i quali devono aggiornare e memorizzare un’approssimazione dell’Hessiana.
 
+L’introduzione del rumore tende ad aumentare i tempi di esecuzione, coerentemente con l’incremento del numero di iterazioni necessario per raggiungere la convergenza. In alcuni casi i tempi del metodo di discesa del gradiente aumentano in modo significativo in presenza di rumore, a indicare la difficoltà del metodo nel gestire le perturbazioni e il basso tasso di convergenza riportato nella Tabella~\ref{tab:iterazioni_rumore_grande}.
+
+Anche in termini di tempo di esecuzione, il metodo BFGS tollerante al rumore si mostra più efficiente del metodo BFGS classico (implementato personalmente) quando è presente rumore, confermando la sua maggiore robustezza. La versione di SciPy risulta la più veloce in assoluto, ma, come già osservato, tende ad avere un basso tasso di convergenza nei test rumorosi.
+
+\newpage
 \subsection{Andamento Funzione Obiettivo e Norme del Gradiente}
 
