@@ -98,3 +98,20 @@ Anche in termini di tempo di esecuzione, il metodo BFGS tollerante al rumore si 
 \newpage
 \subsection{Andamento Funzione Obiettivo e Norme del Gradiente}
 
+\begin{figure}
+    \centering
+    \subfloat[][Andamento della funzione obiettivo su BOXPOWER con rumore \(10^{-8}\).]
+        {\includegraphics[width=0.8\textwidth]{images/plot/rumore_piccolo/BOXPOWER_function_histories.pdf}\label{fig:boxpower_func_rumore_piccolo}} \\
+    \subfloat[][Andamento della norma del gradiente su BOXPOWER con rumore \(10^{-8}\).]
+        {\includegraphics[width=0.8\textwidth]{images/plot/rumore_piccolo/BOXPOWER_gradient_norm_histories.pdf}\label{fig:boxpower_grad_rumore_piccolo}}
+    \caption{Andamento della funzione obiettivo e della norma del gradiente per i diversi metodi su BOXPOWER con rumore di piccola entità (\(10^{-8}\)).}
+\end{figure}
+    
+\begin{figure}
+    \centering
+    \subfloat[][Andamento della funzione obiettivo su BOXPOWER con rumore \(10^{-5}\).]
+        {\includegraphics[width=0.8\textwidth]{images/plot/rumore_grande/BOXPOWER_function_histories.pdf}\label{fig:boxpower_func_rumore_grande}} \\
+    \subfloat[][Andamento della norma del gradiente su BOXPOWER con rumore \(10^{-5}\).]
+        {\includegraphics[width=0.8\textwidth]{images/plot/rumore_grande/BOXPOWER_gradient_norm_histories.pdf}\label{fig:boxpower_grad_rumore_grande}}
+    \caption{Andamento della funzione obiettivo e della norma del gradiente per i diversi metodi su BOXPOWER con rumore di grande entità (\(10^{-5}\)).}
+\end{figure}
