@@ -410,19 +410,21 @@ def run_and_show_result(problem_name: str, methods: List[str], eps_f: float = 1e
         grad_norms_histories.append(grad_norms_hist)
         method_labels.append(method)
 
+    tol = res.get('tol', None)
+
     # Disegna il grafico con le storie dei valori di f per i metodi eseguiti sul problema
     all_empty_f = all(len(h) == 0 for h in f_histories)
     if all_empty_f:
         print("Attenzione: nessuna storia dei valori della funzione disponibile per i metodi eseguiti. Niente da plottare.")
     else:
-        plotting.plot_function_histories(f_histories, method_labels, problem_name=prob_id, logy=True)
+        plotting.plot_function_histories(f_histories, method_labels, problem_name=prob_id, tol=tol, logy=True)
 
     # Disegna il grafico con le storie delle norme del gradiente per i metodi eseguiti sul problema
     all_empty_grad = all(len(h) == 0 for h in grad_norms_histories)
     if all_empty_grad:
         print("Attenzione: nessuna storia delle norme del gradiente disponibile per i metodi eseguiti. Niente da plottare.")
     else:
-        plotting.plot_gradient_norm_histories(grad_norms_histories, method_labels, problem_name=prob_id, logy=True)
+        plotting.plot_gradient_norm_histories(grad_norms_histories, method_labels, problem_name=prob_id, tol=tol, logy=True)
 
 
 

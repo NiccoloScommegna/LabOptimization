@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # pycutest.print_available_sif_params('BROYDN7D')
     # p = pycutest.import_problem('BROYDN7D', sifParams={'N/2': 25})  # Possibili valori per N/2: 5, 25, 50, 250, 500
 
-    # problemi = ['ALLINITU', 'ARWHEAD', 'BOX', 'BOXPOWER', 'BRKMCC', 'BROYDN7D']
+    # problemi = ['ALLINITU', 'BOX', 'BOXPOWER', 'BRKMCC', 'BROYDN7D', 'DENSCHNA']
 
 
     
@@ -44,13 +44,13 @@ if __name__ == "__main__":
     
     # test.run_and_show_result(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000)
     # test.repeat_iterations(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
-    # test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=False)
+    # test.repeat_timing(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
     
     # test.run_and_show_result(problem_name='BOX', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, sif_params={'N': 10})
     # test.repeat_iterations(problem_name='BOX', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
     # test.repeat_timing(problem_name='BOX', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
     
-    # test.run_and_show_result(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, sif_params={'N': 10})
+    # test.run_and_show_result(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, seed=6, tol_factor=1, max_iter=10000, sif_params={'N': 10})
     # test.repeat_iterations(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
     # test.repeat_timing(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
 
@@ -63,5 +63,5 @@ if __name__ == "__main__":
     # test.repeat_timing(problem_name='BROYDN7D', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N/2': 25})
 
     # test.run_and_show_result(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000)
-    test.repeat_iterations(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
+    # test.repeat_iterations(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
     # test.repeat_timing(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
