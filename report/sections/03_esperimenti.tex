@@ -42,7 +42,7 @@ Il metodo BFGS tollerante al rumore si rivela più robusto di BFGS classico impl
 
 La versione del metodo BFGS di SciPy appare la meno influenzata dal rumore in termini di numero medio di iterazioni — è sempre il metodo che impiega meno iterazioni — ma presenta comunque un basso tasso di convergenza — il più basso tra i metodi BFGS — nelle prove rumorose: solo poche esecuzioni raggiungono effettivamente il criterio di arresto in alcuni problemi. Questo comportamento, che si riscontra anche su istanze senza rumore, lascia ipotizzare che SciPy impieghi criteri di arresto o controlli numerici diversi rispetto a quelli usati nelle implementazioni personali (oltre alla sola norma del gradiente minore o uguale di un valore di tolleranza).
 
-Infine, dall’analisi delle due tabelle emerge che un aumento del livello di rumore determina una diminuzione del numero medio di iterazioni: ciò è dovuto al fatto che la tolleranza per la condizione di arresto viene calcolata dinamicamente in funzione del rumore, quindi tende ad aumentare con esso, rendendo più “facile” soddisfare il criterio di convergenza. Questa scelta spiega anche le differenze osservate tra i risultati sui problemi senza rumore riportati nelle tabelle, poiché la tolleranza è stata fissata coerentemente con il livello di rumore considerato per ogni esperimento.
+Infine, dall’analisi delle due tabelle emerge, in generale, che un aumento del livello di rumore determina una diminuzione del numero medio di iterazioni: ciò è dovuto al fatto che la tolleranza per la condizione di arresto viene calcolata dinamicamente in funzione del rumore, quindi tende ad aumentare con esso, rendendo più “facile” soddisfare il criterio di convergenza. Questa scelta spiega anche le differenze osservate tra i risultati sui problemi senza rumore riportati nelle tabelle, poiché la tolleranza è stata fissata coerentemente con il livello di rumore considerato per ogni esperimento.
 
 \begin{sidewaystable}
     \scriptsize
@@ -87,7 +87,7 @@ Infine, dall’analisi delle due tabelle emerge che un aumento del livello di ru
     \end{tabular}
     
 \end{sidewaystable}
-Per ciascun problema, la Tabella~\ref{tab:tempi_rumore_grande} riporta il tempo medio di esecuzione dei diversi metodi, sia in assenza di rumore sia con un rumore di elevata entità (livello \(10^{-5}\)). Per ogni configurazione sono state eseguite 50 repliche. Nell’analisi dei tempi abbiamo scelto di riportare solo i risultati relativi al rumore elevato, poiché i risultati ottenuti con rumore di entità minore mostrano tendenze analoghe; inoltre non riportiamo qui il numero di esecuzioni convergenti perché risulterebbe ridondante rispetto a quanto già esposto nella sezione precedente.
+Per ciascun problema, la Tabella~\ref{tab:tempi_rumore_grande} riporta il tempo medio di esecuzione dei diversi metodi, sia in assenza di rumore sia con un rumore di elevata entità (livello \(10^{-5}\)). Per ogni configurazione sono state eseguite 50 repliche. Nell’analisi dei tempi è stato scelto di riportare solo i risultati relativi al rumore elevato, poiché i risultati ottenuti con rumore di entità minore mostrano tendenze analoghe; inoltre non è stato riportato il numero di esecuzioni convergenti perché risulterebbe ridondante rispetto a quanto già esposto nella sezione precedente.
 
 I tempi di esecuzione seguono una tendenza simile a quella osservata per il numero di iterazioni: i metodi BFGS (classico, tollerante al rumore e la versione di SciPy) sono, in generale, più rapidi del metodo di discesa del gradiente sia sui problemi non rumorosi sia su quelli rumorosi. In pochi casi i tempi del gradiente risultano paragonabili — o addirittura inferiori — a quelli dei metodi BFGS (soprattutto quando questi ultimi sono eseguiti su problemi rumorosi): ciò dipende dal fatto che la discesa del gradiente, pur richiedendo più iterazioni, ha un costo per iterazione molto inferiore rispetto ai metodi quasi-Newton, i quali devono aggiornare e memorizzare un’approssimazione dell’Hessiana.
 
@@ -97,6 +97,19 @@ Anche in termini di tempo di esecuzione, il metodo BFGS tollerante al rumore si 
 
 \newpage
 \subsection{Andamento Funzione Obiettivo e Norme del Gradiente}
+In questa sezione vengono mostrati alcuni grafici rappresentativi dell’andamento della funzione obiettivo e della norma del gradiente durante l’esecuzione dei diversi metodi. I risultati relativi al metodo di discesa del gradiente non sono stati riportati nelle figure perché, a causa della sua mancata convergenza in molti test, avrebbero reso difficile leggere e confrontare l’andamento degli altri algoritmi.
+
+I grafici si riferiscono al problema del benchmark \texttt{BOXPOWER} e mostrano due livelli di rumore: basso (\(10^{-8}\)) e alto (\(10^{-5}\)), gli stessi impiegati nelle sezioni precedenti. Essi evidenziano l’effetto del rumore sul comportamento degli algoritmi e mettono in luce come il BFGS tollerante al rumore gestisca meglio tali perturbazioni.
+
+Sull’andamento della funzione obiettivo, in assenza di rumore si osserva la classica diminuzione regolare e monotona verso il minimo per tutti i metodi (vedi Figura~\ref{fig:boxpower_func_rumore_piccolo}). Con l’introduzione del rumore invece emergono oscillazioni più pronunciate, particolarmente marcate nel BFGS classico (cfr. Figura~\ref{fig:boxpower_func_rumore_grande}), a indicare che le perturbazioni possono interferire con l’identificazione di direzioni di discesa affidabili.
+
+L’analisi della norma del gradiente conferma queste osservazioni: in presenza di rumore basso (Figura~\ref{fig:boxpower_grad_rumore_piccolo}) la riduzione del gradiente è più irregolare rispetto al caso deterministico, ma il BFGS tollerante al rumore mantiene una traiettoria di discesa relativamente stabile rispetto al BFGS classico. Con rumore elevato (Figura~\ref{fig:boxpower_grad_rumore_grande}) le fluttuazioni del gradiente sono significativamente più ampie per il BFGS classico, mentre la variante tollerante al rumore conserva una tendenza discendente più coerente.
+
+Ancora una volta dai grafici relativi alla norma del gradiente notiamo come il metodo BFGS di SciPy, pur essendo molto veloce, non riesca a soddisfare il criterio di arresto, soprattutto in presenza di rumore, confermando quanto osservato nelle sezioni precedenti. Notiamo però che il metodo riesce a ridurre la norma del gradiente in modo consistente, anche se non fino al valore di tolleranza prefissato.
+
+Infine, dai grafici della norma del gradiente si conferma anche il comportamento della versione SciPy di BFGS:\@ pur essendo molto efficiente in termini di tempo, essa non raggiunge spesso il criterio di arresto nei test rumorosi, benché riduca la norma del gradiente in modo consistente, non sempre arriva al valore di tolleranza prefissato, come già osservato nelle sezioni precedenti.
+
+Nei grafici relativi al problema \texttt{BOXPOWER} si osserva che l’aumento del rumore porta a un incremento del numero di iterazioni necessarie per la convergenza. Sebbene questo possa sembrare in contrasto con il comportamento medio evidenziato dalle tabelle relative al numero di iterazioni, una verifica delle tabelle più approfondita per il problema \texttt{BOXPOWER} mostra che anche lì non si registra una diminuzione delle iterazioni al crescere del rumore; dunque l’andamento mostrato nei grafici è coerente con i risultati medi riportati in tabella.
 
 \begin{figure}
     \centering
@@ -104,7 +117,7 @@ Anche in termini di tempo di esecuzione, il metodo BFGS tollerante al rumore si 
         {\includegraphics[width=0.8\textwidth]{images/plot/rumore_piccolo/BOXPOWER_function_histories.pdf}\label{fig:boxpower_func_rumore_piccolo}} \\
     \subfloat[][Andamento della norma del gradiente su BOXPOWER con rumore \(10^{-8}\).]
         {\includegraphics[width=0.8\textwidth]{images/plot/rumore_piccolo/BOXPOWER_gradient_norm_histories.pdf}\label{fig:boxpower_grad_rumore_piccolo}}
-    \caption{Andamento della funzione obiettivo e della norma del gradiente per i diversi metodi su BOXPOWER con rumore di piccola entità (\(10^{-8}\)).}
+    \caption{Andamento della funzione obiettivo e della norma del gradiente per i diversi metodi su BOXPOWER con rumore di piccola entità (\(10^{-8}\)).}\label{fig:boxpower_rumore_piccolo}
 \end{figure}
     
 \begin{figure}
@@ -113,5 +126,5 @@ Anche in termini di tempo di esecuzione, il metodo BFGS tollerante al rumore si 
         {\includegraphics[width=0.8\textwidth]{images/plot/rumore_grande/BOXPOWER_function_histories.pdf}\label{fig:boxpower_func_rumore_grande}} \\
     \subfloat[][Andamento della norma del gradiente su BOXPOWER con rumore \(10^{-5}\).]
         {\includegraphics[width=0.8\textwidth]{images/plot/rumore_grande/BOXPOWER_gradient_norm_histories.pdf}\label{fig:boxpower_grad_rumore_grande}}
-    \caption{Andamento della funzione obiettivo e della norma del gradiente per i diversi metodi su BOXPOWER con rumore di grande entità (\(10^{-5}\)).}
+    \caption{Andamento della funzione obiettivo e della norma del gradiente per i diversi metodi su BOXPOWER con rumore di grande entità (\(10^{-5}\)).}\label{fig:boxpower_rumore_grande}
 \end{figure}
