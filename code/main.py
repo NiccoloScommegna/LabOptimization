@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # test.repeat_iterations(problem_name='BOX', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
     # test.repeat_timing(problem_name='BOX', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
     
-    # test.run_and_show_result(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, seed=6, tol_factor=1, max_iter=10000, sif_params={'N': 10})
+    # test.run_and_show_result(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, sif_params={'N': 10})
     # test.repeat_iterations(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
     # test.repeat_timing(problem_name='BOXPOWER', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 10})
 
