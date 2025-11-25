@@ -5,9 +5,6 @@ import test
 if __name__ == "__main__":
         
     # p = pycutest.import_problem('ALLINITU')
-    
-    # pycutest.print_available_sif_params('ARWHEAD')
-    # p = pycutest.import_problem('ARWHEAD', sifParams={'N': 100})  # Possibili valori per N: 100, 500, 1000, 5000
 
     # pycutest.print_available_sif_params('BOX')
     # p = pycutest.import_problem('BOX', sifParams={'N': 10})  # Possibili valori per N: 10, 100, 1000, 10000
@@ -20,7 +17,7 @@ if __name__ == "__main__":
     # pycutest.print_available_sif_params('BROYDN7D')
     # p = pycutest.import_problem('BROYDN7D', sifParams={'N/2': 25})  # Possibili valori per N/2: 5, 25, 50, 250, 500
 
-    # problemi = ['ALLINITU', 'BOX', 'BOXPOWER', 'BRKMCC', 'BROYDN7D', 'DENSCHNA']
+    # problemi = ['ALLINITU', 'BOX', 'BOXPOWER', 'BRKMCC', 'BROYDN7D', 'CURLY20', 'DENSCHNA']
 
 
     
@@ -34,12 +31,12 @@ if __name__ == "__main__":
                ]
     
     # Rumore piccolo
-    eps_f = 1e-8
-    eps_g = 1e-8
+    # eps_f = 1e-8
+    # eps_g = 1e-8
 
     # Rumore grande
-    # eps_f = 1e-5
-    # eps_g = 1e-5
+    eps_f = 1e-5
+    eps_g = 1e-5
 
     
     # test.run_and_show_result(problem_name='ALLINITU', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000)
@@ -61,6 +58,10 @@ if __name__ == "__main__":
     # test.run_and_show_result(problem_name='BROYDN7D', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, sif_params={'N/2': 25})
     # test.repeat_iterations(problem_name='BROYDN7D', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N/2': 25})
     # test.repeat_timing(problem_name='BROYDN7D', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N/2': 25})
+
+    # test.run_and_show_result(problem_name='CURLY20', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, sif_params={'N': 100})
+    # test.repeat_iterations(problem_name='CURLY20', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 100})
+    # test.repeat_timing(problem_name='CURLY20', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True, sif_params={'N': 100})
 
     # test.run_and_show_result(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000)
     # test.repeat_iterations(problem_name='DENSCHNA', methods=methods, eps_f=eps_f, eps_g=eps_g, tol_factor=1, max_iter=10000, n_runs=50, quiet=True)
